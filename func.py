@@ -23,7 +23,7 @@ class Func():
     def __str__(self):
         return f"<type func>"
 
-class PyFunc(Func):
+class PyFunc():
     def __init__(self, func, scope=None):
         self.func = func
         self.closure = scope

@@ -2,15 +2,19 @@
 參照某天跟冰封提起的方法嘗試實現的一個解釋器
 """
 import env
+from type import is_none, is_int, is_float, is_string, is_quote_by
+from type import String
 
 def value_parser(s):
     if is_quote_by(s, '"') or is_quote_by(s, "'"):
-        return env.String(''.join(s[1:-1]))
+        return String(''.join(s[1:-1]))
     else:
         return ''.join(s)
 
 # parser str to list
-def parser(expr):
+# 以防萬一新parser出了甚麼事, 和生成測試用的
+# 講真, 加了其它功能後這個parser貌似連生成測試都沒辦法了..
+def _parser(expr):
     length = len(expr)
     def _f(index):
         result = []
@@ -39,7 +43,7 @@ def parser(expr):
         return value_parser(buffer), index
     return _f(0)[0]
 
-def yet_another_parser(expr):
+def parser(expr):
     res = []
     last = [res]
     index = 0
@@ -50,9 +54,19 @@ def yet_another_parser(expr):
     FLAG_ESCAPING_STRING = 2
     # 呃..應該差不多是這樣? 其實我在想會不會用到位運算....
     ## 感覺好複雜..找天看看能不能想個辦法改改..
-
+    ESCAPING_LIST = {
+        "n": "\n",
+        '"': "\"",
+        "'": '\"'
+    }
     for char in expr:
-        if char == "(" or char == "[":
+        if FLAG == FLAG_ESCAPING_STRING:
+            if char in ESCAPING_LIST:
+                buffer += ESCAPING_LIST[char]
+                FLAG = FLAG_STRING
+            else:
+                raise SyntaxError(char)
+        elif char == "(" or char == "[":
             if buffer:
                 last[-1].append(value_parser(buffer))
                 buffer = []
@@ -73,7 +87,7 @@ def yet_another_parser(expr):
             if FLAG == FLAG_DEFAULT:
                 FLAG = FLAG_STRING
             elif FLAG == FLAG_STRING:
-                last[-1].append(env.String(''.join(buffer)))
+                last[-1].append(String(''.join(buffer)))
                 buffer = []
                 FLAG = FLAG_DEFAULT
             elif FLAG == FLAG_ESCAPING_STRING:
@@ -85,7 +99,7 @@ def yet_another_parser(expr):
             if FLAG == FLAG_DEFAULT:
                 raise SyntaxError
             elif FLAG == FLAG_STRING:
-                FLAG == FLAG_ESCAPING_STRING
+                FLAG = FLAG_ESCAPING_STRING
             elif FLAG == FLAG_ESCAPING_STRING:
                 buffer += char
             else:
@@ -99,29 +113,6 @@ def yet_another_parser(expr):
         last[-1].append(value_parser(buffer))
         buffer = []
     return res[0]
-
-def is_int(s):
-    try:
-        int(s)
-        return True
-    except ValueError:
-        return False
-
-def is_float(s):
-    try:
-        float(s)
-        return True
-    except ValueError:
-        return False
-
-def is_none(s):
-    return s is None
-
-def is_string(s):
-    return isinstance(s, env.String)
-
-def is_quote_by(s, q):
-    return  q == s[0] == s[-1]
 
 scopeID = 0
 def interp0(expr, env, scope):

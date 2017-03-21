@@ -1,11 +1,12 @@
 import env
-import interp
+from interp import parser, _parser, interp, interp0
 from unittest import Test, unittest, starttest
 
 test_suite = ["(print 1)", None,
         "(print x)", KeyError,
         "(print 'x')", None,
         "(print \"x\")", None,
+        "(print \"\\n\")", None,
         "(do (+ 1 3) (+ 1 1))", 2,
         "(do (+ 1 2 3 4 5 6 7 8 9 10))", 55,
         "(+(+ 1                1)1)", 3,
@@ -74,7 +75,7 @@ def test_sameenv():
     """
     env0 = env.Env()
     def _fun(e, y):
-        return interp.interp0(interp.parser(y), e, None)[0]
+        return interp0(parser(y), e, None)[0]
     unittest(env.Env, _fun, test_suite)
 
 @Test
@@ -82,29 +83,21 @@ def test_diffenv():
     """
     Individual env
     """
-    unittest(lambda: None, lambda _, y: interp.interp(interp.parser(y)), test_suite)
+    unittest(lambda: None, lambda _, y: interp(parser(y)), test_suite)
 
 @Test
 def test_parser():
     """
-    Parser
-    """ # 一改parser就出一堆bug了, 不加不行啊orz
-    parser_test_suite = ["(+ 1 2)", ["+", "1", "2"],
-            "_", "_"]
-    unittest(lambda: None, lambda _, y: interp.parser(y), parser_test_suite)
-
-@Test
-def test_yet_another_parser():
-    """
-    Yet Another Parser
+    New Parser
     """
     new_test_suite = []
     for i in range(0, len(test_suite), 2):
         new_test_suite.append(test_suite[i])
-        new_test_suite.append(interp.parser(test_suite[i]))
-    unittest(lambda: None, lambda _, y: interp.yet_another_parser(y), new_test_suite)
+        new_test_suite.append(_parser(test_suite[i]))
+    unittest(lambda: None, lambda _, y: parser(y), new_test_suite)
 def main():
     starttest()
 
 if __name__ == '__main__':
     main()
+    input("Enter to continue...")
