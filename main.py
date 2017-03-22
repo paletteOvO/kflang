@@ -15,9 +15,7 @@ if __name__ == '__main__':
         while True:
             try:
                 r = input(">> ")
-                if r == "exit":
-                    break
-                else:
-                    print(interp.interp0(interp.parser(r), env0, None)[0])
+                for i in interp.parser(r):
+                    print(interp.interp0(i, env0, None)[0])
             except Exception as e:
                 traceback.print_exception(*sys.exc_info())

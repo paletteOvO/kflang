@@ -56,7 +56,6 @@ def parser(expr):
     ESCAPING_LIST = {
         "n": "\n",
         '"': "\"",
-        "'": '\"',
         "\\": "\\"
     }
     for char in expr:

@@ -119,12 +119,13 @@ def _exit(args, _, __):
 
 @PyFunc
 def _exec(args, env, scope):
-    import os
     def _tostr(s):
         v = interp0(s, env, scope)[0]
-        return '"' + str(v) + '"'
-    res = map(_tostr, args)
-    os.system(" ".join(res))
+        return str(v)
+    res = list(map(_tostr, args))
+    from subprocess import call
+    print(res)
+    call(res)
 
 @PyFunc
 def _input(args, env, scope):
