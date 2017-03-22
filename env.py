@@ -124,7 +124,7 @@ def _exec(args, env, scope):
         return str(v)
     res = list(map(_tostr, args))
     from subprocess import call
-    print(res)
+    # print(res)
     call(res)
 
 @PyFunc
