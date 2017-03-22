@@ -3,10 +3,10 @@
 """
 import env
 from type import is_none, is_int, is_float, is_string, is_quote_by
-from type import String
+from type import String, Quote
 
 def value_parser(s):
-    if is_quote_by(s, '"') or is_quote_by(s, "'"):
+    if is_quote_by(s, '"'):
         return String(''.join(s[1:-1]))
     else:
         return ''.join(s)
@@ -46,7 +46,6 @@ def _parser(expr):
 def parser(expr):
     res = []
     last = [res]
-    index = 0
     buffer = []
     FLAG = 0
     FLAG_DEFAULT = 0
@@ -57,15 +56,29 @@ def parser(expr):
     ESCAPING_LIST = {
         "n": "\n",
         '"': "\"",
-        "'": '\"'
+        "'": '\"',
+        "\\": "\\"
     }
     for char in expr:
+        # print("char:", char)
+        # print("res:", res)
+        # print("last:", last)
+        # print("buffer:", buffer)
+        # print("FLAG:", FLAG)
         if FLAG == FLAG_ESCAPING_STRING:
             if char in ESCAPING_LIST:
                 buffer += ESCAPING_LIST[char]
                 FLAG = FLAG_STRING
             else:
                 raise SyntaxError(char)
+        elif FLAG == FLAG_STRING:
+            if char == "\\":
+                FLAG = FLAG_ESCAPING_STRING
+            elif char == "\"":
+                FLAG = FLAG_DEFAULT
+                buffer += '"'
+            else:
+                buffer += char
         elif char == "(" or char == "[":
             if buffer:
                 last[-1].append(value_parser(buffer))
@@ -74,45 +87,41 @@ def parser(expr):
             last[-1].append(new)
             last.append(new)
         elif char == ")" or char == "]":
+            l = last.pop()
             if buffer:
-                last.pop().append(value_parser(buffer))
+                l.append(value_parser(buffer))
                 buffer = []
-            else:
+            if len(last) == 0:
+                raise SyntaxError
+            elif isinstance(last[-1], Quote):
                 last.pop()
-        elif char == " ":
+        elif char == " " or char == "\n":
             if buffer:
                 last[-1].append(value_parser(buffer))
                 buffer = []
+        elif char == "'":
+            new = Quote([])
+            last[-1].append(new)
+            last.append(new)
         elif char == "\"":
             if FLAG == FLAG_DEFAULT:
                 FLAG = FLAG_STRING
-            elif FLAG == FLAG_STRING:
-                last[-1].append(String(''.join(buffer)))
-                buffer = []
-                FLAG = FLAG_DEFAULT
-            elif FLAG == FLAG_ESCAPING_STRING:
-                buffer += char
-                FLAG = FLAG_STRING
+                buffer += '"'
             else:
                 print("WTF??")
         elif char == "\\":
             if FLAG == FLAG_DEFAULT:
                 raise SyntaxError
-            elif FLAG == FLAG_STRING:
-                FLAG = FLAG_ESCAPING_STRING
-            elif FLAG == FLAG_ESCAPING_STRING:
-                buffer += char
             else:
                 print("WTF??")
         else:
             buffer += char
-        index += 1
-    if FLAG != FLAG_DEFAULT:
+    if FLAG != FLAG_DEFAULT or len(last) != 1:
         raise SyntaxError
     if buffer:
         last[-1].append(value_parser(buffer))
         buffer = []
-    return res[0]
+    return res
 
 scopeID = 0
 def interp0(expr, env, scope):

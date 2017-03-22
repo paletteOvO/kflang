@@ -84,10 +84,7 @@ def _print(args, env, scope):
     # (print ...)
     def _tostr(s):
         v = interp0(s, env, scope)[0]
-        if is_string(s):
-            return v.val
-        else:
-            return str(v)
+        return str(v)
     res = map(_tostr, args)
     print(" ".join(res))
 
@@ -120,19 +117,40 @@ def _exit(args, _, __):
     else:
         exit()
 
+@PyFunc
+def _exec(args, env, scope):
+    import os
+    def _tostr(s):
+        v = interp0(s, env, scope)[0]
+        return '"' + str(v) + '"'
+    res = map(_tostr, args)
+    os.system(" ".join(res))
+
+@PyFunc
+def _input(args, env, scope):
+    def _tostr(s):
+        v = interp0(s, env, scope)[0]
+        return str(v)
+    res = map(_tostr, args)
+    return input(" ".join(res))
+
 def init_env(env):
     env.set(None, "do", _do)
-    env.set(None, "print", _print)
     env.set(None, "def", _def)
     env.set(None, "let", _let)
     env.set(None, "fn", _fn)
     env.set(None, "if", _if)
+
     env.set(None, "+", _add)
     env.set(None, "-", _sub)
     env.set(None, "*", _mul)
     env.set(None, "/", _div)
     env.set(None, "%", _mod)
     env.set(None, "=", _eq)
+    env.set(None, "print", _print)
     env.set(None, "exit", _exit)
+    env.set(None, "exec", _exec)
+    env.set(None, "input", _input)
+
     env.set(None, "#t", True)
     env.set(None, "#f", False)

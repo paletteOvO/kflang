@@ -1,0 +1,10 @@
+(do
+    (def msg (input "msg="))
+    (exec "git add .")
+    (if (= msg "")
+        (exec "git commit -m \"Script commit at %DATE:~0,10% %TIME:~0,8% UTC+8\"")
+        (exec "git commit -m" msg)
+    )
+    (exec "git push --force")
+    (input "Enter to continue...")
+)

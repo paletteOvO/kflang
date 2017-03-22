@@ -4,7 +4,6 @@ from unittest import Test, unittest, starttest
 
 test_suite = ["(print 1)", None,
         "(print x)", KeyError,
-        "(print 'x')", None,
         "(print \"x\")", None,
         "(print \"\\n\")", None,
         "(do (+ 1 3) (+ 1 1))", 2,
@@ -66,8 +65,6 @@ test_suite = ["(print 1)", None,
         )", 4,
         "_", KeyError]
 
-
-
 @Test
 def test_sameenv():
     """
@@ -75,7 +72,7 @@ def test_sameenv():
     """
     env0 = env.Env()
     def _fun(e, y):
-        return interp0(parser(y), e, None)[0]
+        return interp0(parser(y)[0], e, None)[0]
     unittest(env.Env, _fun, test_suite)
 
 @Test
@@ -83,21 +80,8 @@ def test_diffenv():
     """
     Individual env
     """
-    unittest(lambda: None, lambda _, y: interp(parser(y)), test_suite)
+    unittest(lambda: None, lambda _, y: interp(parser(y)[0]), test_suite)
 
-@Test
-def test_parser():
-    """
-    New Parser
-    """
-    new_test_suite = []
-    for i in range(0, len(test_suite), 2):
-        new_test_suite.append(test_suite[i])
-        new_test_suite.append(_parser(test_suite[i]))
-    unittest(lambda: None, lambda _, y: parser(y), new_test_suite)
-def main():
-    starttest()
 
 if __name__ == '__main__':
-    main()
-    input("Enter to continue...")
+    starttest()
