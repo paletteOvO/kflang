@@ -31,6 +31,12 @@ test_suite = ["(print 1)", None,
             (def f2 (fn (x) (f)))\
             (def x 3)\
             (f2 2))", AssertionError, # 和預想的一樣, 重新綁定會改變閉包 ## 禁止重新綁定好還是當成feature好呢...
+                "(do\
+            (def x 1)\
+            (def f (fn () x))\
+            (def f2 (fn (x) (f)))\
+            (set x 3)\
+            (f2 2))", 3, # 呃...只用常量的話有沒有辦法實現迴圈呢...用尾遞的話目前沒GC, 會炸吧..還是得想個辦法搞定GC...
         "(do\
             (def F (fn (x)\
                 (if (= x 0)\
@@ -77,20 +83,22 @@ test_suite = ["(print 1)", None,
             res\
         )", 55,
         """(do
-            (def ans 1)
-            (def a 3)
-            (def k 6)
-            (while (!= k 0)
+            (def (pwr b p)
                 (do
-                    (if (= (& k 1) 1)
-                        (set ans (* ans a))
+                    (def ans 1)
+                    (while (!= p 0)
+                        (do
+                            (if (= (& p 1) 1)
+                                (set ans (* ans b))
+                            )
+                            (set b (* b b))
+                            (set p (shr p 1))
+                        )
                     )
-                    (set a (* a a))
-                    (set k (shr k 1))
+                    ans
                 )
             )
-            ans
-        )""", 3 ** 6,
+            (pwr 3 6))""", 3 ** 6,
         "_", KeyError]
 
 @Test
