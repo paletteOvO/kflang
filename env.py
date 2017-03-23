@@ -1,8 +1,10 @@
+from typing import List, Tuple
 from interp import interp, interp0, parser
 from functools import reduce
 from func import PyFunc, Func
 from type import is_none, is_int, is_float, is_string, is_quote_by
 from type import String, Quote
+
 
 class Env():
     buintin_func = []
@@ -25,6 +27,18 @@ class Env():
                     scope = scope[1]
 
     def set(self, scope, name, val):
+        while True:
+            try:
+                tmp = self.env[(name, scope)]
+                self.env[(name, scope)] = val
+                return
+            except KeyError:
+                if scope is None:
+                    raise KeyError()
+                else:
+                    scope = scope[1]
+    
+    def define(self, scope, name, val):
         # print("set:", (name, scope), "\n  ->", val)
         if (name, scope) in self.env:
             # print((name, scope), "is already defined")
@@ -60,6 +74,30 @@ def _mod(args, env, scope):
 def _eq(args, env, scope):
     return interp0(args[0], env, scope)[0] == interp0(args[1], env, scope)[0]
 
+@PyFunc(">")
+def _gt(args, env, scope):
+    return interp0(args[0], env, scope)[0] > interp0(args[1], env, scope)[0]
+
+@PyFunc("<")
+def _lt(args, env, scope):
+    return interp0(args[0], env, scope)[0] < interp0(args[1], env, scope)[0]
+
+@PyFunc("!=")
+def _neq(args, env, scope):
+    return interp0(args[0], env, scope)[0] != interp0(args[1], env, scope)[0]
+
+@PyFunc("&")
+def _bitand(args, env, scope):
+    return interp0(args[0], env, scope)[0] & interp0(args[1], env, scope)[0]
+
+@PyFunc("|")
+def _bitor(args, env, scope):
+    return interp0(args[0], env, scope)[0] | interp0(args[1], env, scope)[0]
+
+@PyFunc("^")
+def _bitxor(args, env, scope):
+    return interp0(args[0], env, scope)[0] ^ interp0(args[1], env, scope)[0]
+
 @PyFunc("do")
 def _do(args, env, scope):
     # (do ...)
@@ -76,9 +114,9 @@ def _def(args, env, scope):
     # (def (<name> <args>) <body>) => (def <name> (lambda (<args>) <body>))
     if isinstance(args[0], list):
         fn = Func(args[0][1:], args[1], scope[1])
-        env.set(scope[1], args[0][0], fn)
+        env.define(scope[1], args[0][0], fn)
     else:
-        env.set(scope[1], str(args[0]), interp0(args[1], env, scope[1])[0])
+        env.define(scope[1], str(args[0]), interp0(args[1], env, scope[1])[0])
 
 @PyFunc("fn")
 def _fn(args, env, scope):
@@ -100,14 +138,15 @@ def _if(args, env, scope):
     # (if <b> <t> <f>)
     if interp0(args[0], env, scope)[0]:
         return interp0(args[1], env, scope)[0]
-    else:
+    elif len(args) > 2:
         return interp0(args[2], env, scope)[0]
+    return None
 
 @PyFunc("let")
 def _let(args, env, scope):
     # (let ((<name> <value>) ... ) <body>)
     for i in args[0]:
-        env.set(
+        env.define(
             scope, # scope
             i[0], # var name
             interp0(i[1], env, scope)[0]) # value
@@ -152,12 +191,35 @@ def _eval(args, env, scope):
             return interp0(i, env, scope)[0]
     elif isinstance(args[0], Quote):
         return interp0(args[0][0], env, scope)[0]
-    else:
-        assert TypeError
+    expr = interp0(args[0], env, scope)[0]
+    return interp0(expr, env, scope)[0]
+
+@PyFunc("while")
+def _while(args: List, env: Env, scope: Tuple):
+    # (while <bool> <body>)
+    while interp0(args[0], env, scope)[0]:
+        interp0(args[1], env, scope)[0]
+
+@PyFunc("shl")
+def _shl(args, env, scope):
+    # 1 << 2
+    # (shl 1 2)
+    return interp0(args[0], env, scope)[0] << interp0(args[1], env, scope)[0] 
+
+@PyFunc("shr")
+def _shr(args, env, scope):
+    # 1 >> 2
+    # (shr 1 2)
+    return interp0(args[0], env, scope)[0] >> interp0(args[1], env, scope)[0] 
+
+@PyFunc("set")
+def _set(args, env: Env, scope):
+    # (set <name> <val>)
+    env.set(scope, args[0], interp0(args[1], env, scope)[0])
 
 def init_env(env, buintin_func):
     # print(buintin_func)
     for i in buintin_func:
-        env.set(None, i[0], i[1])    
-    env.set(None, "#t", True)
-    env.set(None, "#f", False)
+        env.define(None, i[0], i[1])    
+    env.define(None, "#t", True)
+    env.define(None, "#f", False)

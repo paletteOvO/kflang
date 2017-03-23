@@ -16,7 +16,7 @@ class Func():
         self.runtime += 1
         exec_scope = (self.runtime, self.closure)
         for i in range(0, self.args_len):
-            env.set(
+            env.define(
                 exec_scope, # scope
                 self.args_namelist[i], # var name
                 interp.interp0(args[i], env, scope)[0]) # value

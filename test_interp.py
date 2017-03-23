@@ -66,6 +66,31 @@ test_suite = ["(print 1)", None,
         "(eval '(+ 1 1))", 2,
         "(do (def x 1) (eval '(+ x x)))", 2,
         "(do (def x 1) (eval '(do (def x 2) (+ x x))) x)", 1,
+        "(shl 1 2)", 4,
+        "(shr 1 2)", 0,
+        "(do \
+            (def x 10)\
+            (def res 0)\
+            (while (> x 0)\
+                (do (set res (+ res x))\
+                    (set x (- x 1))))\
+            res\
+        )", 55,
+        """(do
+            (def ans 1)
+            (def a 3)
+            (def k 6)
+            (while (!= k 0)
+                (do
+                    (if (= (& k 1) 1)
+                        (set ans (* ans a))
+                    )
+                    (set a (* a a))
+                    (set k (shr k 1))
+                )
+            )
+            ans
+        )""", 3 ** 6,
         "_", KeyError]
 
 @Test
