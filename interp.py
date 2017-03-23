@@ -58,6 +58,7 @@ def parser(expr):
         '"': "\"",
         "\\": "\\"
     }
+    lineNum = 1
     for char in expr:
         # print("char:", char)
         # print("res:", res)
@@ -91,10 +92,12 @@ def parser(expr):
                 l.append(value_parser(buffer))
                 buffer = []
             if len(last) == 0:
-                raise SyntaxError
+                raise SyntaxError(f"line {lineNum}")
             elif isinstance(last[-1], Quote):
                 last.pop()
         elif char == " " or char == "\n":
+            if char == "\n":
+                lineNum += 1
             if buffer:
                 last[-1].append(value_parser(buffer))
                 buffer = []
@@ -110,13 +113,13 @@ def parser(expr):
                 print("WTF??")
         elif char == "\\":
             if FLAG == FLAG_DEFAULT:
-                raise SyntaxError
+                raise SyntaxError(f"line {lineNum}")
             else:
                 print("WTF??")
         else:
             buffer += char
     if FLAG != FLAG_DEFAULT or len(last) != 1:
-        raise SyntaxError
+        raise SyntaxError(f"line {lineNum}")
     if buffer:
         last[-1].append(value_parser(buffer))
         buffer = []

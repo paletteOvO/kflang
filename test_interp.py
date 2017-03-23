@@ -63,6 +63,9 @@ test_suite = ["(print 1)", None,
                 (gcd b (% a b))))\
             (gcd 4 8)\
         )", 4,
+        "(eval '(+ 1 1))", 2,
+        "(do (def x 1) (eval '(+ x x)))", 2,
+        "(do (def x 1) (eval '(do (def x 2) (+ x x))) x)", 1,
         "_", KeyError]
 
 @Test

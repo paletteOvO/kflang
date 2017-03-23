@@ -1,8 +1,10 @@
 import interp
+import env
 
 class Func():
-    def __init__(self, args, body, scope):
+    def __init__(self, args, body, scope, name="lambda"):
         # (lambda (<args>) <body>)
+        self.name = name
         self.args_namelist = args
         self.args_len = len(args)
         self.body = body
@@ -21,15 +23,20 @@ class Func():
         return interp.interp0(self.body, env, exec_scope)
 
     def __str__(self):
-        return f"<type func>"
+        return f"<Func {self.name}>"
 
-class PyFunc():
-    def __init__(self, func, scope=None):
-        self.func = func
-        self.closure = scope
+def PyFunc(name):
+    class PyFunc():
+        def __init__(self, name, func):
+            self.name = name
+            self.func = func
+            env.Env.buintin_func.append((name, self))
 
-    def __call__(self, args, env, scope):
-        return self.func(args, env, scope), None
+        def __call__(self, args, env, scope):
+            return self.func(args, env, scope), None
 
-    def __str__(self):
-        return f"<type builtin-func>"
+        def __str__(self):
+            return f"<Builtin-Func {self.name}>"
+
+    return lambda func: PyFunc(name, func)
+
