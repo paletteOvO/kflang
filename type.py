@@ -19,6 +19,10 @@ def is_none(s):
 def is_string(s):
     return isinstance(s, String)
 
+def is_quote(s):
+    return isinstance(s, Quote)
+
+
 def is_quote_by(s, q):
     return len(s) > 1 and q == s[0] == s[-1]
 

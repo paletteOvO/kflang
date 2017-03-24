@@ -2,7 +2,7 @@ from typing import List, Tuple
 from interp import interp, interp0, parser
 from functools import reduce
 from func import PyFunc, Func
-from type import is_none, is_int, is_float, is_string, is_quote_by
+from type import is_none, is_int, is_float, is_string, is_quote_by, is_quote
 from type import String, Quote
 
 
@@ -47,58 +47,65 @@ class Env():
 
 @PyFunc("+")
 def _add(args, env, scope):
-    args[0] = interp0(args[0], env, scope)[0]
-    return reduce(lambda x, y: x + interp0(y, env, scope)[0], args)
+    return reduce(lambda x, y: x + y, args)
 
 @PyFunc("-")
 def _sub(args, env, scope):
-    args[0] = interp0(args[0], env, scope)[0]
-    return reduce(lambda x, y: x - interp0(y, env, scope)[0], args)
+    return reduce(lambda x, y: x - y, args)
 
 @PyFunc("*")
 def _mul(args, env, scope):
-    args[0] = interp0(args[0], env, scope)[0]
-    return reduce(lambda x, y: x * interp0(y, env, scope)[0], args)
+    return reduce(lambda x, y: x * y, args)
 
 @PyFunc("/")
 def _div(args, env, scope):
-    args[0] = interp0(args[0], env, scope)[0]
-    return reduce(lambda x, y: x / interp0(y, env, scope)[0], args)
+    return reduce(lambda x, y: x / y, args)
 
 @PyFunc("%")
 def _mod(args, env, scope):
-    args[0] = interp0(args[0], env, scope)[0]
-    return reduce(lambda x, y: x % interp0(y, env, scope)[0], args)
+    return reduce(lambda x, y: x % y, args)
 
 @PyFunc("=")
 def _eq(args, env, scope):
-    return interp0(args[0], env, scope)[0] == interp0(args[1], env, scope)[0]
+    x = args[0]
+    for i in args:
+        if x != i:
+            return False
+    return True
 
 @PyFunc(">")
 def _gt(args, env, scope):
-    return interp0(args[0], env, scope)[0] > interp0(args[1], env, scope)[0]
+    x = args[0]
+    for i in range(1, len(args)):
+        if not (x > args[i]):
+            return False
+    return True
 
 @PyFunc("<")
 def _lt(args, env, scope):
-    return interp0(args[0], env, scope)[0] < interp0(args[1], env, scope)[0]
+    x = args[0]
+    for i in range(1, len(args)):
+        if not (x < args[i]):
+            return False
+    return True
 
 @PyFunc("!=")
 def _neq(args, env, scope):
-    return interp0(args[0], env, scope)[0] != interp0(args[1], env, scope)[0]
+    return args[0] != args[1]
 
 @PyFunc("&")
 def _bitand(args, env, scope):
-    return interp0(args[0], env, scope)[0] & interp0(args[1], env, scope)[0]
+    return args[0] & args[1]
 
 @PyFunc("|")
 def _bitor(args, env, scope):
-    return interp0(args[0], env, scope)[0] | interp0(args[1], env, scope)[0]
+    return args[0] | args[1]
 
 @PyFunc("^")
 def _bitxor(args, env, scope):
-    return interp0(args[0], env, scope)[0] ^ interp0(args[1], env, scope)[0]
+    return args[0] ^ args[1]
 
-@PyFunc("do")
+@PyFunc("do", fexpr=True)
 def _do(args, env, scope):
     # (do ...)
     # print("do:", scope)
@@ -108,7 +115,7 @@ def _do(args, env, scope):
         res = interp0(i, env, scope)
     return res[0]
 
-@PyFunc("def")
+@PyFunc("def", fexpr=True)
 def _def(args, env, scope):
     # (def <name> <val>)
     # (def (<name> <args>) <body>) => (def <name> (lambda (<args>) <body>))
@@ -118,7 +125,7 @@ def _def(args, env, scope):
     else:
         env.define(scope[1], str(args[0]), interp0(args[1], env, scope[1])[0])
 
-@PyFunc("fn")
+@PyFunc("fn", fexpr=True)
 def _fn(args, env, scope):
     # (fn (<fun args>) <fun body>)
     return Func(args[0], args[1], scope)
@@ -126,14 +133,10 @@ def _fn(args, env, scope):
 @PyFunc("print")
 def _print(args, env, scope):
     # (print ...)
-    def _tostr(s):
-        v = interp0(s, env, scope)[0]
-        return str(v)
-    res = map(_tostr, args)
-    print(" ".join(res))
+    print(" ".join(map(str, args)))
 
 
-@PyFunc("if")
+@PyFunc("if", fexpr=True)
 def _if(args, env, scope):
     # (if <b> <t> <f>)
     if interp0(args[0], env, scope)[0]:
@@ -142,7 +145,7 @@ def _if(args, env, scope):
         return interp0(args[2], env, scope)[0]
     return None
 
-@PyFunc("let")
+@PyFunc("let", fexpr=True)
 def _let(args, env, scope):
     # (let ((<name> <value>) ... ) <body>)
     for i in args[0]:
@@ -161,20 +164,14 @@ def _exit(args, _, __):
 
 @PyFunc("exec")
 def _exec(args, env, scope):
-    def _tostr(s):
-        v = interp0(s, env, scope)[0]
-        return str(v)
-    res = list(map(_tostr, args))
+    res = list(map(str, args))
     from subprocess import call
     # print(res)
     call(res)
 
 @PyFunc("input")
 def _input(args, env, scope):
-    def _tostr(s):
-        v = interp0(s, env, scope)[0]
-        return str(v)
-    res = map(_tostr, args)
+    res = map(str, args)
     return input(" ".join(res))
 
 @PyFunc("call/cc")
@@ -186,15 +183,15 @@ def _callcc(args, env, scope):
 
 @PyFunc("eval")
 def _eval(args, env, scope):
-    if isinstance(args[0], String):
+    if is_string(args[0]):
         for i in parser(args[0]):
             return interp0(i, env, scope)[0]
-    elif isinstance(args[0], Quote):
+    elif is_quote(args[0]):
         return interp0(args[0][0], env, scope)[0]
     expr = interp0(args[0], env, scope)[0]
     return interp0(expr, env, scope)[0]
 
-@PyFunc("while")
+@PyFunc("while", fexpr=True)
 def _while(args: List, env: Env, scope: Tuple):
     # (while <bool> <body>)
     while interp0(args[0], env, scope)[0]:
@@ -204,18 +201,25 @@ def _while(args: List, env: Env, scope: Tuple):
 def _shl(args, env, scope):
     # 1 << 2
     # (shl 1 2)
-    return interp0(args[0], env, scope)[0] << interp0(args[1], env, scope)[0] 
+    return args[0] << args[1]
 
 @PyFunc("shr")
 def _shr(args, env, scope):
     # 1 >> 2
     # (shr 1 2)
-    return interp0(args[0], env, scope)[0] >> interp0(args[1], env, scope)[0] 
+    return args[0] >> args[1]
 
-@PyFunc("set")
+@PyFunc("set", fexpr=True)
 def _set(args, env: Env, scope):
     # (set <name> <val>)
     env.set(scope, args[0], interp0(args[1], env, scope)[0])
+
+@PyFunc("range")
+def _range(args, env: Env, scope):
+    # (range start end step)
+    if len(args) == 3:
+        return range(args[0], args[1], args[2], env, scope)
+    pass
 
 def init_env(env, buintin_func):
     # print(buintin_func)

@@ -2,7 +2,7 @@
 參照某天跟冰封提起的方法嘗試實現的一個解釋器
 """
 import env
-from type import is_none, is_int, is_float, is_string, is_quote_by
+from type import is_none, is_int, is_float, is_string, is_quote_by, is_quote
 from type import String, Quote
 
 def value_parser(s):
@@ -67,7 +67,7 @@ def parser(expr):
         # print("FLAG:", FLAG)
         if FLAG == FLAG_ESCAPING_STRING:
             if char in ESCAPING_LIST:
-                buffer += ESCAPING_LIST[char]
+                buffer.append(ESCAPING_LIST[char])
                 FLAG = FLAG_STRING
             else:
                 raise SyntaxError(char)
@@ -76,9 +76,9 @@ def parser(expr):
                 FLAG = FLAG_ESCAPING_STRING
             elif char == "\"":
                 FLAG = FLAG_DEFAULT
-                buffer += '"'
+                buffer.append('"')
             else:
-                buffer += char
+                buffer.append(char)
         elif char == "(" or char == "[":
             if buffer:
                 last[-1].append(value_parser(buffer))
@@ -108,7 +108,7 @@ def parser(expr):
         elif char == "\"":
             if FLAG == FLAG_DEFAULT:
                 FLAG = FLAG_STRING
-                buffer += '"'
+                buffer.append('"')
             else:
                 print("WTF??")
         elif char == "\\":
@@ -117,7 +117,7 @@ def parser(expr):
             else:
                 print("WTF??")
         else:
-            buffer += char
+            buffer.append(char)
     if FLAG != FLAG_DEFAULT or len(last) != 1:
         raise SyntaxError(f"line {lineNum}")
     if buffer:
@@ -127,16 +127,18 @@ def parser(expr):
 
 scopeID = 0
 def interp0(expr, env, scope):
-    if isinstance(expr, list):
+    if is_none(expr):
+        return (None, None)
+    elif is_string(expr):
+        return (expr, None)
+    if is_quote(expr):
+        return (expr, None)
+    elif isinstance(expr, list):
         fun = interp0(expr[0], env, scope)[0]
         global scopeID
         scopeID += 1
         # print((str(fun), scope))
         return fun(expr[1:], env, (scopeID, scope))
-    elif is_none(expr):
-        return (None, None)
-    elif is_string(expr):
-        return (expr, None)
     elif is_int(expr):
         return (int(expr), None)
     elif is_float(expr):
