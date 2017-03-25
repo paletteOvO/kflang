@@ -31,21 +31,23 @@ class Func():
         return f"<Func {self.name}>"
 
 def PyFunc(name, fexpr=False):
-    class PyFunc():
+    class PyFunc(Func):
         def __init__(self, name, func):
             self.fexpr = fexpr
             self.name = name
             self.func = func
+            self.runtime = 0
             env.Env.buintin_func.append((name, self))
 
         def __call__(self, args, env, scope):
             if fexpr:
                 return self.func(args, env, scope), None
             else:
+                self.runtime += 1
                 args_val = []
                 for i in args:
                     args_val.append(interp.interp0(i, env, scope)[0])
-                return self.func(args_val, env, scope), None
+                return self.func(args_val, env, (self.runtime, scope)), None
 
         def __str__(self):
             return f"<Builtin-Func {self.name}>"

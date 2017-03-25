@@ -89,7 +89,10 @@ def parser(expr):
             if buffer:
                 last[-1].append(value_parser(buffer))
                 buffer = []
-            new = []
+            if is_quote(last[-1]):
+                new = Quote()
+            else:
+                new = []
             last[-1].append(new)
             last.append(new)
         elif char == ")" or char == "]":
@@ -105,10 +108,23 @@ def parser(expr):
                 last[-1].append(value_parser(buffer))
                 buffer = []
         elif char == "'":
-            if index + 1 >= length or expr[index + 1] != "(":
+            if index + 1 >= length or\
+               (expr[index + 1] != "(" and\
+               expr[index + 1] != "["):
                 raise SyntaxError(f"line {lineNum} at {charNum}, {char}")
             index += 1
             new = Quote()
+            last[-1].append(new)
+            last.append(new)
+        elif char == ",":
+            if not is_quote(last[-1]):
+                raise SyntaxError(f"line {lineNum} at {charNum}, {char}")
+            if index + 1 >= length or\
+               (expr[index + 1] != "(" and\
+               expr[index + 1] != "["):
+                raise SyntaxError(f"line {lineNum} at {charNum}, {char}")
+            index += 1
+            new = []
             last[-1].append(new)
             last.append(new)
         elif char == "\"":
@@ -138,9 +154,9 @@ def interp0(expr, env, scope):
     elif is_string(expr):
         return (expr, None)
     if is_quote(expr):
-        return (expr, None)
+        return (quote_interp(expr, env, scope), None)
     elif isinstance(expr, list):
-        fun = interp0(expr[0], env, scope)[0]
+        fun: Func = interp0(expr[0], env, scope)[0]
         global scopeID
         scopeID += 1
         # print((str(fun), scope))
@@ -151,6 +167,23 @@ def interp0(expr, env, scope):
         return (float(expr), None)
     else:
         return (env.get(scope, expr), None)
+
+def quote_interp(quote: Quote, env, scope):
+    # '(x 1 2 3) => '("x" 1 2 3)
+    assert is_quote(quote)
+    new_quote = Quote()
+    for i in quote:
+        if is_quote(i):
+            new_quote.append(quote_interp(i, env, scope))
+        elif isinstance(i, list):
+            new_quote.append(interp0(i, env, scope)[0])
+        elif is_int(i):
+            new_quote.append(int(i))
+        elif is_float(i):
+            new_quote.append(float(i))
+        else:
+            new_quote.append(i)
+    return new_quote
 
 def interp(expr):
     return interp0(expr, env.Env(), None)[0]

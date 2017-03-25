@@ -2,7 +2,7 @@ from typing import List, Tuple
 from interp import interp, interp0, parser
 from functools import reduce
 from func import PyFunc, Func
-from type import is_none, is_int, is_float, is_string, is_quote_by, is_quote
+from type import is_none, is_int, is_float, is_string, is_quote_by, is_quote, is_func
 from type import String, Quote
 
 
@@ -87,6 +87,22 @@ def _lt(args, env, scope):
     x = args[0]
     for i in range(1, len(args)):
         if not (x < args[i]):
+            return False
+    return True
+
+@PyFunc(">=")
+def _ge(args, env, scope):
+    x = args[0]
+    for i in range(1, len(args)):
+        if not (x >= args[i]):
+            return False
+    return True
+
+@PyFunc("<=")
+def _let(args, env, scope):
+    x = args[0]
+    for i in range(1, len(args)):
+        if not (x <= args[i]):
             return False
     return True
 
@@ -217,8 +233,67 @@ def _set(args, env: Env, scope):
 def _range(args, env: Env, scope):
     # (range start end step)
     if len(args) == 3:
-        return range(args[0], args[1], args[2], env, scope)
-    pass
+        return Quote(range(args[0], args[1], args[2]))
+    else:
+        return Quote(range(args[0], args[1]))
+
+@PyFunc("map")
+def _map(args, env: Env, scope):
+    # (map fn quote)
+    assert len(args) == 2
+    assert is_func(args[0])
+    assert is_quote(args[1])
+    res = Quote()
+    for i in args[1]:
+        res.append(args[0]([i], env, scope)[0])
+    return res
+
+@PyFunc("reduce")
+def _reduce(args, env: Env, scope):
+    # (reduce fn quote default)
+    # (fn (lastres ele)
+    assert len(args) == 3
+    assert is_func(args[0])
+    assert is_quote(args[1])
+    lastres = args[2]
+    for i in args[1]:
+        lastres = args[0]([lastres, i], env, scope)[0]
+    return lastres
+
+@PyFunc("filter")
+def _filter(args, env: Env, scope):
+    # (filter fn quote)
+    assert len(args) == 2
+    assert is_func(args[0])
+    assert is_quote(args[1])
+    res = Quote()
+    for i in args[1]:
+        if args[0]([i], env, scope)[0]:
+            res.append(i)
+    return res
+
+@PyFunc(".", fexpr=True)
+def _dot(args, env: Env, scope):
+    # (. obj func args)
+    obj = interp0(args[0], env, scope)[0]
+    if len(args) == 2:
+        return getattr(obj, args[1])()
+    elif len(args) > 2:
+        args_val = []
+        for i in args[2:]:
+            args_val.append(interp0(i, env, scope)[0])
+        return getattr(obj, args[1])(*args_val)
+
+@PyFunc("split")
+def _split(args, env: Env, scope):
+    # (split quote start end step)
+    assert is_quote(args[0])
+    if len(args) == 2:
+        return Quote(args[0][args[1]:])
+    if len(args) == 3:
+        return Quote(args[0][args[1]:args[2]])
+    else:
+        return Quote(args[0][args[1]:args[2]:args[3]])
 
 def init_env(env, buintin_func):
     # print(buintin_func)
@@ -226,3 +301,4 @@ def init_env(env, buintin_func):
         env.define(None, i[0], i[1])    
     env.define(None, "#t", True)
     env.define(None, "#f", False)
+    env.define(None, "nil", None)
