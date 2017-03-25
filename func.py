@@ -16,10 +16,15 @@ class Func():
         self.runtime += 1
         exec_scope = (self.runtime, self.closure)
         for i in range(0, self.args_len):
+            if self.args_namelist[i][0] == "$":
+                self.args_namelist[i] = self.args_namelist[i][1:]
+                val = args[i]
+            else:
+                val = interp.interp0(args[i], env, scope)[0]
             env.define(
                 exec_scope, # scope
                 self.args_namelist[i], # var name
-                interp.interp0(args[i], env, scope)[0]) # value
+                val) # value
         return interp.interp0(self.body, env, exec_scope)
 
     def __str__(self):

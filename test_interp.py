@@ -31,7 +31,7 @@ test_suite = ["(print 1)", None,
             (def f2 (fn (x) (f)))\
             (def x 3)\
             (f2 2))", AssertionError, # 和預想的一樣, 重新綁定會改變閉包 ## 禁止重新綁定好還是當成feature好呢...
-                "(do\
+        "(do\
             (def x 1)\
             (def f (fn () x))\
             (def f2 (fn (x) (f)))\
@@ -99,6 +99,14 @@ test_suite = ["(print 1)", None,
                 )
             )
             (pwr 3 6))""", 3 ** 6,
+        "(do\
+            (def (myif b $t $f)\
+                (if b\
+                    (eval t)\
+                    (eval f))\
+                )\
+            (myif #t (print #t) (print #f))\
+        )", None,
         "_", KeyError]
 
 @Test

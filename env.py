@@ -27,6 +27,7 @@ class Env():
                     scope = scope[1]
 
     def set(self, scope, name, val):
+        
         while True:
             try:
                 tmp = self.env[(name, scope)]
