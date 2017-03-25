@@ -27,4 +27,8 @@ def is_quote_by(s, q):
     return len(s) > 1 and q == s[0] == s[-1]
 
 class String(str): pass
-class Quote(list): pass
+class Quote(list):
+    pass
+    def __call__(self, args, env, scope):
+        return self[args[0]]
+        pass

@@ -59,7 +59,13 @@ def parser(expr):
         "\\": "\\"
     }
     lineNum = 1
-    for char in expr:
+    charNum = 0
+    index = -1
+    length = len(expr)
+    while index < length - 1:
+        charNum += 1
+        index += 1
+        char = expr[index]
         # print("char:", char)
         # print("res:", res)
         # print("last:", last)
@@ -91,18 +97,18 @@ def parser(expr):
             if buffer:
                 l.append(value_parser(buffer))
                 buffer = []
-            if len(last) == 0:
-                raise SyntaxError(f"line {lineNum}")
-            elif isinstance(last[-1], Quote):
-                last.pop()
         elif char == " " or char == "\n":
             if char == "\n":
                 lineNum += 1
+                charNum = 0
             if buffer:
                 last[-1].append(value_parser(buffer))
                 buffer = []
         elif char == "'":
-            new = Quote([])
+            if index + 1 >= length or expr[index + 1] != "(":
+                raise SyntaxError(f"line {lineNum} at {charNum}, {char}")
+            index += 1
+            new = Quote()
             last[-1].append(new)
             last.append(new)
         elif char == "\"":
@@ -113,13 +119,13 @@ def parser(expr):
                 print("WTF??")
         elif char == "\\":
             if FLAG == FLAG_DEFAULT:
-                raise SyntaxError(f"line {lineNum}")
+                raise SyntaxError(f"line {lineNum} at {charNum}, {char}")
             else:
                 print("WTF??")
         else:
             buffer.append(char)
     if FLAG != FLAG_DEFAULT or len(last) != 1:
-        raise SyntaxError(f"line {lineNum}")
+        raise SyntaxError
     if buffer:
         last[-1].append(value_parser(buffer))
         buffer = []

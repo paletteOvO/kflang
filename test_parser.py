@@ -15,8 +15,8 @@ def test_parser():
         '(print "\\n")', ["print", String("\n")],
         '(+ 1 1)', ["+", "1", "1"],
         '((+(+ 1 1) 1)(+ 1 1)(+ 1 1))', [["+", ["+", "1", "1"], "1"], ["+", "1", "1"], ["+", "1", "1"]],
-        "'(x)", Quote([["x"]]), # (quote (x))
-        "'(x (x))", Quote([["x", ["x"]]]),
+        "'(x)", Quote(["x"]), # (quote (x))
+        "'(x (x))", Quote(["x", ["x"]]),
         '(', SyntaxError,
         ')', SyntaxError,
         "\\", SyntaxError,

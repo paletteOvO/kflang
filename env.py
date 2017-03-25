@@ -188,9 +188,7 @@ def _eval(args, env, scope):
         for i in parser(args[0]):
             return interp0(i, env, scope)[0]
     elif is_quote(args[0]):
-        return interp0(args[0][0], env, scope)[0]
-    expr = interp0(args[0], env, scope)[0]
-    return interp0(expr, env, scope)[0]
+        return interp0(list(args[0]), env, scope)[0]
 
 @PyFunc("while", fexpr=True)
 def _while(args: List, env: Env, scope: Tuple):

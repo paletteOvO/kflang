@@ -6,7 +6,7 @@ from type import String, Quote
 @Test
 def test_():
     test_suite = [
-        '(print 1 2)', None
+        "'((x))", None
     ]
     unittest(lambda: None, lambda _, y: interp(parser(y)[0]), test_suite)
 
