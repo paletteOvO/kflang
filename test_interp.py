@@ -57,11 +57,12 @@ test_suite = ["(print 1)", None,
                       5))", 120, # Y算子遞歸 ## 試着在interp print了一下作用域, 只能說遞歸爆炸~
               "(let ([x 1] [y 1]) (+ x y))", 2,
               "(let ([x 2] [y x]) (+ x y))", 4,
-              "(let ([x (let ([x (let ([x 1] [y 1]) (+ x y))]\
+              "\
+               (let ([x (let ([x (let ([x 1] [y 1]) (+ x y))]\
                               [y 1])\
                               (+ x y))]\
                       [y x])\
-                      (+ x y))", 6, # 它說是6, 那就6吧, 誰會去手算這玩意... 反正隔壁Scheme也說是6
+                      (+ x y))", 6, 
               "(do\
                   (def (gcd a b)\
                       (if (= b 0)\
@@ -127,6 +128,7 @@ test_suite = ["(print 1)", None,
                   (quicksort '(5 4 46 465 1 8 58 5 41 81 6 84 1 8))
               )
               """, env.Quote([1, 1, 4, 5, 5, 6, 8, 8, 41, 46, 58, 81, 84, 465]),
+              "'() ; 可以愉快的寫註釋了", env.Quote(),
               "_", KeyError]
 
 @Test

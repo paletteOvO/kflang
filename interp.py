@@ -51,6 +51,7 @@ def parser(expr):
     FLAG_DEFAULT = 0
     FLAG_STRING = 1
     FLAG_ESCAPING_STRING = 2
+    FLAG_COMMENT = 3 # 驚覺自己沒支援注釋
     # 呃..應該差不多是這樣? 其實我在想會不會用到位運算....
     ## 感覺好複雜..找天看看能不能想個辦法改改..
     ESCAPING_LIST = {
@@ -71,7 +72,12 @@ def parser(expr):
         # print("last:", last)
         # print("buffer:", buffer)
         # print("FLAG:", FLAG)
-        if FLAG == FLAG_ESCAPING_STRING:
+        if FLAG == FLAG_COMMENT:
+            if char != "\n":
+                continue
+            else:
+                FLAG = FLAG_DEFAULT
+        elif FLAG == FLAG_ESCAPING_STRING:
             if char in ESCAPING_LIST:
                 buffer.append(ESCAPING_LIST[char])
                 FLAG = FLAG_STRING
@@ -111,18 +117,18 @@ def parser(expr):
             if index + 1 >= length or\
                (expr[index + 1] != "(" and\
                expr[index + 1] != "["):
-                raise SyntaxError(f"line {lineNum} at {charNum}, {char}")
+                raise SyntaxError(f"""{expr.split(endl)[lineNum-1]}\n{'-' * (charNum - 1 + 13)}^""")
             index += 1
             new = Quote()
             last[-1].append(new)
             last.append(new)
         elif char == ",":
             if not is_quote(last[-1]):
-                raise SyntaxError(f"line {lineNum} at {charNum}, {char}")
+                raise SyntaxError(f"""{expr.split(endl)[lineNum-1]}\n{'-' * (charNum - 1 + 13)}^""")
             if index + 1 >= length or\
                (expr[index + 1] != "(" and\
                expr[index + 1] != "["):
-                raise SyntaxError(f"line {lineNum} at {charNum}, {char}")
+                raise SyntaxError(f"""{expr.split(endl)[lineNum-1]}\n{'-' * (charNum - 1 + 13)}^""")
             index += 1
             new = []
             last[-1].append(new)
@@ -132,15 +138,19 @@ def parser(expr):
                 FLAG = FLAG_STRING
                 buffer.append('"')
             else:
-                print("WTF??")
+                # 估計是沒完結的字串..
+                raise SyntaxError(f"""{expr.split(endl)[lineNum-1]}\n{'-' * (charNum - 1 + 13)}^""")
         elif char == "\\":
             if FLAG == FLAG_DEFAULT:
-                raise SyntaxError(f"line {lineNum} at {charNum}, {char}")
+                raise SyntaxError(f"""{expr.split(endl)[lineNum-1]}\n{'-' * (charNum - 1 + 13)}^""")
             else:
                 print("WTF??")
+        elif char == ";":
+            FLAG = FLAG_COMMENT
         else:
             buffer.append(char)
-    if FLAG != FLAG_DEFAULT or len(last) != 1:
+    if len(last) != 1 or (FLAG != FLAG_DEFAULT and FLAG != FLAG_COMMENT):
+        # print(FLAG)
         raise SyntaxError
     if buffer:
         last[-1].append(value_parser(buffer))
@@ -153,7 +163,7 @@ def interp0(expr, env, scope):
         return (None, None)
     elif is_string(expr):
         return (expr, None)
-    if is_quote(expr):
+    elif is_quote(expr):
         return (quote_interp(expr, env, scope), None)
     elif isinstance(expr, list):
         fun: Func = interp0(expr[0], env, scope)[0]
