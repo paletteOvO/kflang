@@ -1,6 +1,8 @@
 import env
 from interp import parser, _parser, interp, interp0
 from unittest import Test, unittest, starttest
+from type import Quote
+import std
 
 test_suite = ["(print 1)", None,
               "(print x)", KeyError,
@@ -83,7 +85,7 @@ test_suite = ["(print 1)", None,
                           (set x (- x 1))))\
                   res\
               )", 55,
-              """(do
+              """(do ;; 快速幂
                   (def (pwr b p)
                       (do
                           (def ans 1)
@@ -108,12 +110,12 @@ test_suite = ["(print 1)", None,
                       )\
                   (myif #t (print #t) (print #f))\
               )", None,
-              "(filter (fn (x) #t) '(1 2 3))", env.Quote([1, 2, 3]),
-              "(filter (fn (x) #f) '(1 2 3))", env.Quote(),
+              "(filter (fn (x) #t) '(1 2 3))", Quote([1, 2, 3]),
+              "(filter (fn (x) #f) '(1 2 3))", Quote(),
               "(reduce (fn (x y) (+ x y)) '(1 2 3) 0)", 6,
-              "(map (fn (x) (+ x 1)) '(1 2 3))", env.Quote([2, 3, 4]),
-              "(do (def x 1) '(x ,(do x)))", env.Quote(["x", 1]),
-              """\
+              "(map (fn (x) (+ x 1)) '(1 2 3))", Quote([2, 3, 4]),
+              "(do (def x 1) '(x ,(do x)))", Quote(["x", 1]),
+              """;快排
               (do
                   (def (quicksort lst)
                     (if (= (. lst __len__) 0)
@@ -127,8 +129,14 @@ test_suite = ["(print 1)", None,
                     ))
                   (quicksort '(5 4 46 465 1 8 58 5 41 81 6 84 1 8))
               )
-              """, env.Quote([1, 1, 4, 5, 5, 6, 8, 8, 41, 46, 58, 81, 84, 465]),
-              "'() ; 可以愉快的寫註釋了", env.Quote(),
+              """, Quote([1, 1, 4, 5, 5, 6, 8, 8, 41, 46, 58, 81, 84, 465]),
+              "'() ; 可以愉快的寫註釋了", Quote(),
+              "(do\
+                (def x 1)\
+                (def y (lazy x))\
+                (do\
+                    (def x 2)\
+                    y))", 1, # 保留宣告時的作用域..
               "_", KeyError]
 
 @Test

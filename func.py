@@ -54,3 +54,18 @@ def PyFunc(name, fexpr=False):
 
     return lambda func: PyFunc(name, func)
 
+class Lazy():
+    def __init__(self, scope, body):
+        self.val = Empty()
+        self.scope = scope
+        self.body = body
+
+    def __str__(self):
+        return f"<Lazy-Eval>"
+
+    def __call__(self, env):
+        if isinstance(self.val, Empty):
+            self.val = interp.interp0(self.body, env, self.scope)[0]
+        return self.val
+
+class Empty(): pass

@@ -2,6 +2,8 @@ import env
 import interp
 import traceback
 import sys
+import std
+
 if __name__ == '__main__':
     if len(sys.argv) == 2:
         file = sys.argv[1]

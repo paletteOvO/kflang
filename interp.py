@@ -2,7 +2,7 @@
 參照某天跟冰封提起的方法嘗試實現的一個解釋器
 """
 import env
-from type import is_none, is_int, is_float, is_string, is_quote_by, is_quote
+from type import is_none, is_int, is_float, is_string, is_quote_by, is_quote, is_lazy
 from type import String, Quote
 
 def value_parser(s):
@@ -161,6 +161,8 @@ scopeID = 0
 def interp0(expr, env, scope):
     if is_none(expr):
         return (None, None)
+    elif is_lazy(expr):
+        return (expr(), None)
     elif is_string(expr):
         return (expr, None)
     elif is_quote(expr):
@@ -176,7 +178,11 @@ def interp0(expr, env, scope):
     elif is_float(expr):
         return (float(expr), None)
     else:
-        return (env.get(scope, expr), None)
+        val = env.get(scope, expr)
+        if is_lazy(val):
+            return (val(env), None)
+        else:
+            return (val, None)
 
 def quote_interp(quote: Quote, env, scope):
     # '(x 1 2 3) => '("x" 1 2 3)

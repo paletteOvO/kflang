@@ -1,4 +1,5 @@
 import env
+import func
 def is_int(s):
     try:
         int(s)
@@ -22,11 +23,15 @@ def is_string(s):
 def is_quote(s):
     return isinstance(s, Quote)
 
-
 def is_quote_by(s, q):
     return len(s) > 1 and q == s[0] == s[-1]
 
 def is_func(s):
-    return isinstance(s, env.Func)
+    return isinstance(s, func.Func)
+
+def is_lazy(s):
+    return isinstance(s, func.Lazy)
+
 class String(str): pass
 class Quote(list): pass
+class Patt(tuple): pass
