@@ -1,7 +1,7 @@
 """
 參照某天跟冰封提起的方法嘗試實現的一個解釋器
 """
-import env
+from env import Env, GC
 from type import is_none, is_int, is_float, is_string, is_quote_by, is_quote, is_lazy
 from type import String, Quote
 
@@ -160,46 +160,55 @@ def parser(expr):
 scopeID = 0
 def interp0(expr, env, scope):
     if is_none(expr):
-        return (None, None)
+        return None, None
     elif is_lazy(expr):
-        return (expr(), None)
+        return expr(), None
     elif is_string(expr):
-        return (expr, None)
+        return expr, None
     elif is_quote(expr):
-        return (quote_interp(expr, env, scope), None)
+        return quote_interp(expr, env, scope)
     elif isinstance(expr, list):
-        fun: Func = interp0(expr[0], env, scope)[0]
         global scopeID
         scopeID += 1
-        # print((str(fun), scope))
-        return fun(expr[1:], env, (scopeID, scope))
+        gc = GC()
+        fun, _gc = interp0(expr[0], env, scope)
+        gc.extend(_gc)
+        val, _gc = fun(expr[1:], env, (scopeID, scope))
+        gc.extend(_gc)
+        return val, gc
     elif is_int(expr):
-        return (int(expr), None)
+        return int(expr), None
     elif is_float(expr):
-        return (float(expr), None)
+        return float(expr), None
     else:
         val = env.get(scope, expr)
         if is_lazy(val):
-            return (val(env), None)
+            return val(env), None
         else:
-            return (val, None)
+            return val, None
 
 def quote_interp(quote: Quote, env, scope):
     # '(x 1 2 3) => '("x" 1 2 3)
     assert is_quote(quote)
     new_quote = Quote()
+    gc = GC()
     for i in quote:
         if is_quote(i):
-            new_quote.append(quote_interp(i, env, scope))
+            val, _gc = quote_interp(i, env, scope)
+            gc.extend(_gc)
+            new_quote.append(val)
         elif isinstance(i, list):
-            new_quote.append(interp0(i, env, scope)[0])
+            val, _gc = interp0(i, env, scope)
+            gc.extend(_gc)
+            new_quote.append(val)
         elif is_int(i):
             new_quote.append(int(i))
         elif is_float(i):
             new_quote.append(float(i))
         else:
             new_quote.append(i)
-    return new_quote
+    gc.clean(env)
+    return new_quote, None
 
 def interp(expr):
-    return interp0(expr, env.Env(), None)[0]
+    return interp0(expr, Env(), None)[0]

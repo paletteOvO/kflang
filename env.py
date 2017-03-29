@@ -37,6 +37,10 @@ class Env():
             assert (name, scope) not in self.env
         self.env[(name, scope)] = val
 
+    def print(self):
+        for k, v in self.env.items():
+            print(f"{k} -> {v}")
+
 
 def init_env(env, buintin_func):
     # print(buintin_func)
@@ -45,3 +49,25 @@ def init_env(env, buintin_func):
     env.define(None, "#t", True)
     env.define(None, "#f", False)
     env.define(None, "nil", None)
+
+class GC():
+    def __init__(self):
+        self.val = []
+
+    def extend(self, otherGC):
+        if otherGC:
+            # print(f"extend {otherGC.val}")
+            self.val.extend(otherGC.val)
+
+    def add(self, scope, varlist):
+        # print(f"add {(scope, varlist)}")
+        self.val.append((scope, varlist))
+
+    def clean(self, env):
+        # print(f"clean {self.val}")
+        for i in self.val:
+            scope, varlist = i
+            for var in varlist:
+                # print(f"del {(var, scope)}")
+                del env.env[(var, scope)]
+        self.val = []
