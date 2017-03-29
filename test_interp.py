@@ -4,6 +4,8 @@ from unittest import Test, unittest, starttest
 from type import Quote
 import std
 
+
+
 test_suite = ["(print 1)", None,
               "(print x)", KeyError,
               "(print \"x\")", None,
@@ -133,14 +135,14 @@ test_suite = ["(print 1)", None,
                   (quicksort '(5 4 46 465 1 8 58 5 41 81 6 84 1 8))
               )
               """, Quote([1, 1, 4, 5, 5, 6, 8, 8, 41, 46, 58, 81, 84, 465]),
-              "'() ; 可以愉快的寫註釋了", Quote(),
+              "'() ; 可以愉快的寫註釋了\n", Quote(),
               "(do\
                 (def x 1)\
                 (def y (lazy x))\
                 (do\
                     (def x 2)\
                     y))", 1, # 保留宣告時的作用域..
-              "_", KeyError]
+             ]
 
 @Test
 def test_sameenv():
@@ -151,7 +153,8 @@ def test_sameenv():
     def _fun(e, y):
         return interp0(parser(y)[0], e, None)[0]
     unittest(lambda: env0, _fun, test_suite)
-    print(len(env0.env))
+    # print(len(env0.env))
+    # env0.print()
 
 @Test
 def test_diffenv():

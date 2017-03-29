@@ -1,6 +1,8 @@
 import env
 import func
 def is_int(s):
+    if isinstance(s, int):
+        return True
     try:
         int(s)
         return True
@@ -8,6 +10,8 @@ def is_int(s):
         return False
 
 def is_float(s):
+    if isinstance(s, float):
+        return True
     try:
         float(s)
         return True

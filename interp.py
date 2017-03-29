@@ -8,8 +8,13 @@ from type import String, Quote
 def value_parser(s):
     if is_quote_by(s, '"'):
         return String(''.join(s[1:-1]))
-    else:
-        return ''.join(s)
+    s = ''.join(s)
+    try:
+        return int(s)
+    except Exception: pass
+    try:
+        return float(s)
+    except Exception: return s
 
 # parser str to list
 # 以防萬一新parser出了甚麼事, 和生成測試用的
@@ -176,10 +181,10 @@ def interp0(expr, env, scope):
         val, _gc = fun(expr[1:], env, (scopeID, scope))
         gc.extend(_gc)
         return val, gc
-    elif is_int(expr):
-        return int(expr), None
-    elif is_float(expr):
-        return float(expr), None
+    elif isinstance(expr, int):
+        return expr, None
+    elif isinstance(expr, float):
+        return expr, None
     else:
         val = env.get(scope, expr)
         if is_lazy(val):
@@ -201,10 +206,10 @@ def quote_interp(quote: Quote, env, scope):
             val, _gc = interp0(i, env, scope)
             gc.extend(_gc)
             new_quote.append(val)
-        elif is_int(i):
-            new_quote.append(int(i))
-        elif is_float(i):
-            new_quote.append(float(i))
+        elif isinstance(i, int):
+            new_quote.append(i)
+        elif isinstance(i, float):
+            new_quote.append(i)
         else:
             new_quote.append(i)
     gc.clean(env)
