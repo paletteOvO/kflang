@@ -112,8 +112,7 @@ def _set(args, env: Env, scope):
 def _env(args, env: Env, scope):
     # (set <name> <val>)
     env.print()
-    return None, GC()
-
+    return None, None
 
 # Math
 @PyFunc("+")
@@ -235,10 +234,15 @@ def _exec(args, env, scope):
 @PyFunc("eval")
 def _eval(args, env, scope):
     if is_string(args[0]):
+        gc = GC()
         for i in parser(args[0]):
-            return interp0(i, env, scope)
+            ret, _gc = interp0(i, env, scope)
+            gc.extend(_gc)
+        gc.clean(env)
     else:
-        return interp0(list(args[0]), env, scope)
+        ret, _gc = interp0(list(args[0]), env, scope)
+        _gc.clean(env)
+    return ret, None
 
 # STDLIB
 @PyFunc("range")
@@ -258,19 +262,22 @@ def _map(args, env: Env, scope):
     assert is_quote(args[1])
     res = Quote()
     for i in args[1]:
-        res.append(args[0]([i], env, scope)[0])
+        val, _gc = args[0]([i], env, scope)
+        _gc.clean(env)
+        res.append(val)
     return res, None
 
 @PyFunc("reduce")
 def _reduce(args, env: Env, scope):
     # (reduce fn quote default)
-    # (fn (lastres ele)
+    # (fn (lastres ele))
     assert len(args) == 3
     assert is_func(args[0])
     assert is_quote(args[1])
     lastres = args[2]
     for i in args[1]:
-        lastres = args[0]([lastres, i], env, scope)[0]
+        lastres, _gc = args[0]([lastres, i], env, scope)
+        _gc.clean(env)
     return lastres, None
 
 @PyFunc("filter")
@@ -281,7 +288,9 @@ def _filter(args, env: Env, scope):
     assert is_quote(args[1])
     res = Quote()
     for i in args[1]:
-        if args[0]([i], env, scope)[0]:
+        val, _gc = args[0]([i], env, scope)
+        _gc.clean(env)
+        if val:
             res.append(i)
     return res, None
 
