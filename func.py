@@ -22,7 +22,8 @@ class Func():
                 self.args_namelist[i] = self.args_namelist[i][1:]
                 val = args[i]
             else:
-                val = interp.interp0(args[i], env, scope)[0]
+                val, _gc = interp.interp0(args[i], env, scope)
+                gc.extend(_gc)
             env.define(
                 exec_scope, # scope
                 self.args_namelist[i], # var name
@@ -76,8 +77,11 @@ class Lazy():
         return f"<Lazy-Eval>"
 
     def __call__(self, env):
+        gc = GC()
         if isinstance(self.val, Empty):
-            self.val = interp.interp0(self.body, env, self.scope)[0]
+            self.val, _gc = interp.interp0(self.body, env, self.scope)
+            gc.extend(_gc)
+        gc.clean(env)
         return self.val
 
 class Empty(): pass

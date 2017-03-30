@@ -34,7 +34,7 @@ test_suite = ["(print 1)", None,
                   (def f (fn () x))\
                   (def f2 (fn (x) (f)))\
                   (def x 3)\
-                  (f2 2))", AssertionError,
+                  (f2 2))", KeyError,
               # 和預想的一樣, 重新綁定會改變閉包
               ## 禁止重新綁定好還是當成feature好呢...
               ### 卧槽我試了下scheme, racket都是直接輸出3的, 我真要搞這麼多事情嗎...
@@ -153,8 +153,8 @@ def test_sameenv():
     def _fun(e, y):
         return interp0(parser(y)[0], e, None)[0]
     unittest(lambda: env0, _fun, test_suite)
-    # print(len(env0.env))
-    # env0.print()
+    print(len(env0.env))
+    env0.print()
 
 @Test
 def test_diffenv():

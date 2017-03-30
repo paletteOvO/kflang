@@ -164,12 +164,14 @@ def parser(expr):
 
 scopeID = 0
 def interp0(expr, env, scope):
-    if is_none(expr):
-        return None, None
-    elif is_lazy(expr):
-        return expr(), None
+    if isinstance(expr, int):
+        return expr, None
+    elif isinstance(expr, float):
+        return expr, None
     elif is_string(expr):
         return expr, None
+    elif is_none(expr):
+        return None, None
     elif is_quote(expr):
         return quote_interp(expr, env, scope)
     elif isinstance(expr, list):
@@ -181,10 +183,8 @@ def interp0(expr, env, scope):
         val, _gc = fun(expr[1:], env, (scopeID, scope))
         gc.extend(_gc)
         return val, gc
-    elif isinstance(expr, int):
-        return expr, None
-    elif isinstance(expr, float):
-        return expr, None
+    elif is_lazy(expr):
+        return expr(env), None
     else:
         val = env.get(scope, expr)
         if is_lazy(val):

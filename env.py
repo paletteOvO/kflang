@@ -5,37 +5,28 @@ class Env():
         init_env(self, self.buintin_func)
 
     def get(self, scope, name):
-        while True:
-            try:
-                # print(scope)
-                # print("get:", (name, scope), "\n  ->")
-                tmp = self.env[(name, scope)]
-                # print("get:", (name, scope), "\n  ->", tmp)
-                return tmp
-            except KeyError:
-                if scope is None:
-                    raise KeyError()
-                else:
-                    scope = scope[1]
+        while (name, scope) not in self.env:
+            if scope is None:
+                return self.env[(name, scope)]
+            scope = scope[1]
+        return self.env[(name, scope)]
 
     def set(self, scope, name, val):
-        while True:
-            try:
-                tmp = self.env[(name, scope)]
-                self.env[(name, scope)] = val
-                return
-            except KeyError:
-                if scope is None:
-                    raise KeyError()
-                else:
-                    scope = scope[1]
+        var = (name, scope)
+        while scope is not None and var not in self.env:
+            scope = scope[1]
+            var = (name, scope[1])
+        if var in self.env:
+            self.env[var] = val
+        else:
+            raise KeyError
 
     def define(self, scope, name, val):
-        # print("set:", (name, scope), "\n  ->", val)
-        if (name, scope) in self.env:
-            # print((name, scope), "is already defined")
-            assert (name, scope) not in self.env
-        self.env[(name, scope)] = val
+        var = (name, scope)
+        if var in self.env:
+            raise KeyError
+        else:
+            self.env[(name, scope)] = val
 
     def print(self):
         for k, v in self.env.items():
@@ -53,11 +44,12 @@ def init_env(env, buintin_func):
 class GC():
     def __init__(self):
         self.val = []
+        self.otherGC = []
 
     def extend(self, otherGC):
         if otherGC:
             # print(f"extend {otherGC.val}")
-            self.val.extend(otherGC.val)
+            self.otherGC.append(otherGC)
 
     def add(self, scope, varlist):
         # print(f"add {(scope, varlist)}")
@@ -70,4 +62,6 @@ class GC():
             for var in varlist:
                 # print(f"del {(var, scope)}")
                 del env.env[(var, scope)]
+        for i in self.otherGC:
+            i.clean(env)
         self.val = []
