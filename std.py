@@ -115,8 +115,7 @@ def _set(args, env: Env, scope):
 @PyFunc("env")
 def _env(args, env: Env, scope):
     # (set <name> <val>)
-    env.print()
-    return None, None
+    return env.env, None
 
 # Math
 @PyFunc("+")

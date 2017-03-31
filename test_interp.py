@@ -1,7 +1,7 @@
 import env
-from interp import parser, _parser, interp, interp0
+from interp import parser, interp, interp0
 from unittest import Test, unittest, starttest
-from type import Quote
+from type import Quote, String
 import std
 
 
@@ -146,7 +146,9 @@ test_suite = ["(print 1)", None,
               "016", int("16", 8),
               "((do ((fn (x) (fn (y) x)) 1)) 2)", 1, # 我就知道GC會掛..  ## 等...作用域外讀取作用域內的本來就不應該吧..
               "(do (def f (do ((fn (x) (fn (y) x)) 1))) (f 2))", 1, # ...拒絕此等詭異寫法QAQ
-              "(do (def f nil) (do (set f ((fn (x) (fn (y) x)) 1))) (f 2))", 1 # 誒函數閉包就是麻煩...
+              "(do (def f nil) (do (set f ((fn (x) (fn (y) x)) 1))) (f 2))", 1, # 誒函數閉包就是麻煩...
+              "(((do ((do (fn (x) (fn (y) (fn (z) (+ x y z))))) 1)) 2) 3)", 6,
+              "(do (def i 10000) (while (> i 0) (do (set i (- i 1)) (((do ((do (fn (x) (fn (y) (fn (z) (+ x y z))))) 1)) 2) 3))) (. (env) __len__))", 20041, # 測驗後想個辦法弄引用計數...
              ]
 
 @Test
@@ -158,8 +160,8 @@ def test_sameenv():
     def _fun(e, y):
         return interp0(parser(y)[0], e, None)[0]
     unittest(lambda: env0, _fun, test_suite)
-    print(len(env0.env))
-    env0.print()
+    # print(len(env0.env))
+    # env0.print()
 
 @Test
 def test_diffenv():

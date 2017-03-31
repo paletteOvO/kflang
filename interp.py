@@ -21,39 +21,8 @@ def value_parser(s):
     except Exception: pass
     return s
 
-# parser str to list
-# 以防萬一新parser出了甚麼事, 和生成測試用的
-# 講真, 加了其它功能後這個parser貌似連生成測試都沒辦法了..
-def _parser(expr):
-    length = len(expr)
-    def _f(index):
-        result = []
-        buffer = []
-        while index < length:
-            if expr[index] == "(" or expr[index] == "[":
-                if buffer:
-                    result.append(value_parser(buffer))
-                    buffer = []
-                sub_res, index = _f(index + 1)
-                result.append(sub_res)
-                if index >= length:
-                    return result
-            char = expr[index]
-            if char == ")" or char == "]":
-                if buffer:
-                    result.append(value_parser(buffer))
-                return result, index + 1
-            elif char == " " or char == "\n":
-                if buffer:
-                    result.append(value_parser(buffer))
-                    buffer = []
-            else:
-                buffer.append(char)
-            index += 1
-        return value_parser(buffer), index
-    return _f(0)[0]
-
 def parser(expr):
+    endl = "\n"
     res = []
     last = [res]
     buffer = []
@@ -182,7 +151,7 @@ def interp0(expr, env, scope):
         scopeID += 1
         gc = GC()
         fun, _gc = interp0(expr[0], env, scope)
-        gc.extend(_gc)
+        # gc.extend(_gc)
         val, _gc = fun(expr[1:], env, (scopeID, scope))
         gc.extend(_gc)
         return val, gc
