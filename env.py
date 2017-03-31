@@ -48,19 +48,19 @@ class GC():
 
     def extend(self, otherGC):
         if otherGC:
-            print(f"extend {otherGC.val}")
+            # print(f"extend {otherGC.val}")
             self.otherGC.append(otherGC)
 
     def add(self, scope, varlist):
-        print(f"add {(scope, varlist)}")
+        # print(f"add {(scope, varlist)}")
         self.val.append((scope, varlist))
 
     def clean(self, env):
-        print(f"clean {self.val}")
+        # print(f"clean {self.val}")
         for i in self.val:
             scope, varlist = i
             for var in varlist:
-                print(f"del {(var, scope)}")
+                # print(f"del {(var, scope)}")
                 del env.env[(var, scope)]
         for i in self.otherGC:
             i.clean(env)
