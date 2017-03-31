@@ -101,11 +101,15 @@ def _callcc(args, env, scope):
 @PyFunc("set", fexpr=True)
 def _set(args, env: Env, scope):
     # (set <name> <val>)
+    gc = GC()
     if isinstance(args[0], list):
         fn = Func(args[0][1:], args[1], scope[1])
         env.set(scope[1], str(args[0][0]), fn)
     else:
-        env.set(scope[1], str(args[0]), interp0(args[1], env, scope[1])[0])
+        val, _gc = interp0(args[1], env, scope[1])
+        gc.extend(_gc)
+        env.set(scope[1], str(args[0]), val)
+    gc.clean(env)
     return None, None
 
 @PyFunc("env")

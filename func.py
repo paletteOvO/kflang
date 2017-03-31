@@ -32,7 +32,11 @@ class Func():
         val, _gc = interp.interp0(self.body, env, exec_scope)
         gc.add(exec_scope, varlist)
         gc.extend(_gc)
-        return val, gc
+        # TODO scan to clear unclosured variable
+        if isinstance(val, Func):
+            return val, None
+        else:
+            return val, gc
 
     def __str__(self):
         return f"<Func {self.name}>"
