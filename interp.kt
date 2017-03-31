@@ -2,15 +2,9 @@
  * 參照某天跟冰封提起的方法嘗試實現的一個解釋器
  * 用VSCode寫的...鬼知道能不能用(攤手
  */
-def value_parser(s):
-    if is_quote_by(s, '"'):
-        return String(''.join(s[1:-1]))
-    else:
-        return ''.join(s)
-
 // parser str to list, kotlin version
 class Interp() {
-    fun parser(expr: String) -> ArrayList<Any> {
+    fun parser(expr: String): ArrayLis;pt<Any> {
         // TODO custom class to represent subtyping relationship
         val res = arrayListOf<Any>()
         val last = arrayListOf<Any>(res)
@@ -21,9 +15,9 @@ class Interp() {
         val FLAG_ESCAPING_STRING = 2
         val FLAG_COMMENT = 3
         val ESCAPING_LIST = hashMapOf("n" to "\n", "\"" to "\"", "\\" to "\\")
-        val lineNum = 1
-        val charNum = 0
-        val index = -1
+        var lineNum = 1
+        var charNum = 0
+        var index = -1
         val length = expr.length
         while(index < length - 1) {
             charNum += 1

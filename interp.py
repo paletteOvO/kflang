@@ -83,9 +83,7 @@ def parser(expr):
         # print("buffer:", buffer)
         # print("FLAG:", FLAG)
         if FLAG == FLAG_COMMENT:
-            if char != "\n":
-                continue
-            else:
+            if char == "\n":
                 FLAG = FLAG_DEFAULT
         elif FLAG == FLAG_ESCAPING_STRING:
             if char in ESCAPING_LIST:
