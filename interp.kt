@@ -2,9 +2,10 @@
  * 參照某天跟冰封提起的方法嘗試實現的一個解釋器
  * 用VSCode寫的...鬼知道能不能用(攤手
  */
+
 // parser str to list, kotlin version
 class Interp() {
-    fun parser(expr: String): ArrayLis;pt<Any> {
+    fun parser(expr: String): ArrayList<Any> {
         // TODO custom class to represent subtyping relationship
         val res = arrayListOf<Any>()
         val last = arrayListOf<Any>(res)
