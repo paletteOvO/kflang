@@ -30,13 +30,16 @@ class Func():
                 val) # value
             varlist.append(self.args_namelist[i])
         val, _gc = interp.interp0(self.body, env, exec_scope)
-        gc.add(exec_scope, varlist)
         gc.extend(_gc)
         # TODO scan to clear unclosured variable
         if isinstance(val, Func):
-            return val, None
+            gc.addClosureGC(exec_scope, varlist)
         else:
-            return val, gc
+            gc.cleanClosureGC(env)
+            gc.add(exec_scope, varlist)
+        # print("__call__")
+        # gc.printClosureGC()
+        return val, gc
 
     def __str__(self):
         return f"<Func {self.name}>"

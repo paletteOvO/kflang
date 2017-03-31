@@ -45,6 +45,7 @@ class GC():
     def __init__(self):
         self.val = []
         self.otherGC = []
+        self.closureVal = []
 
     def extend(self, otherGC):
         if otherGC:
@@ -65,3 +66,22 @@ class GC():
         for i in self.otherGC:
             i.clean(env)
         self.val = []
+    
+    def addClosureGC(self, scope, varlist):
+        # print(f"ClosureGC add {(scope, varlist)}")
+        self.closureVal.append((scope, varlist))
+    
+    def cleanClosureGC(self, env):
+        for i in self.otherGC:
+            i.cleanClosureGC(env)
+        # print(f"ClosureGC clean {self.closureVal}")
+        for i in self.closureVal:
+            scope, varlist = i
+            for var in varlist:
+                # print(f"ClosureGC del {(var, scope)}")
+                del env.env[(var, scope)]
+    
+    def printClosureGC(self):
+        print(self.closureVal)
+        for i in self.otherGC:
+            i.printClosureGC()

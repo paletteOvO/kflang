@@ -19,7 +19,12 @@ def _do(args, env, scope):
         res, _gc = interp0(i, env, scope)
         gc.extend(_gc)
     gc.clean(env)
-    return res, None
+    # print("DO")
+    # gc.printClosureGC()
+    if not is_func(res):
+        gc.cleanClosureGC(env)
+    # print("==")
+    return res, gc
 
 @PyFunc("def", fexpr=True)
 def _def(args, env, scope):

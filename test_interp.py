@@ -1,6 +1,6 @@
 import env
 from interp import parser, interp, interp0
-from unittest import Test, unittest, starttest
+from unittest import Test, unittest, starttest, TestFunc
 from type import Quote, String
 import std
 
@@ -148,7 +148,9 @@ test_suite = ["(print 1)", None,
               "(do (def f (do ((fn (x) (fn (y) x)) 1))) (f 2))", 1, # ...拒絕此等詭異寫法QAQ
               "(do (def f nil) (do (set f ((fn (x) (fn (y) x)) 1))) (f 2))", 1, # 誒函數閉包就是麻煩...
               "(((do ((do (fn (x) (fn (y) (fn (z) (+ x y z))))) 1)) 2) 3)", 6,
-              "(do (def i 10000) (while (> i 0) (do (set i (- i 1)) (((do ((do (fn (x) (fn (y) (fn (z) (+ x y z))))) 1)) 2) 3))) (. (env) __len__))", 20041, # 測驗後想個辦法弄引用計數...
+              "(do (def i 100) (while (> i 0) (do (set i (- i 1)) (((do ((do (fn (x) (fn (y) (fn (z) (+ x y z))))) 1)) 2) 3))) (. (env) __len__))",
+                TestFunc(lambda x: x==41 or x==56),
+                # 測驗後想個辦法弄引用計數... #誒感覺這也可以, 也不是非得引用計數
              ]
 
 @Test

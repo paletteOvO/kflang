@@ -149,11 +149,15 @@ def interp0(expr, env, scope):
     elif isinstance(expr, list):
         global scopeID
         scopeID += 1
+        selfScope = scopeID
         gc = GC()
         fun, _gc = interp0(expr[0], env, scope)
-        # gc.extend(_gc)
-        val, _gc = fun(expr[1:], env, (scopeID, scope))
         gc.extend(_gc)
+        val, _gc = fun(expr[1:], env, (selfScope, scope))
+        gc.extend(_gc)
+        # print(f"interp {fun.name} {selfScope}:")
+        # gc.printClosureGC()
+        # print("="*10)
         return val, gc
     elif is_lazy(expr):
         return expr(env), None
@@ -188,4 +192,5 @@ def quote_interp(quote: Quote, env, scope):
     return new_quote, None
 
 def interp(expr):
-    return interp0(expr, Env(), None)[0]
+    val, _ = interp0(expr, Env(), None)
+    return val
