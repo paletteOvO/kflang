@@ -1,0 +1,4 @@
+(exec "git" "add" ".")
+(exec "git" "commit")
+(exec "git" "push" "--force")
+(input "Enter to continue...")
