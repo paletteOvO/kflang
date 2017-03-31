@@ -9,12 +9,17 @@ def value_parser(s):
     if is_quote_by(s, '"'):
         return String(''.join(s[1:-1]))
     s = ''.join(s)
+    if s.startswith("0x"):
+        return int(s, 16)
+    if s.startswith("0"):
+        return int(s, 8)
     try:
         return int(s)
     except Exception: pass
     try:
         return float(s)
-    except Exception: return s
+    except Exception: pass
+    return s
 
 # parser str to list
 # 以防萬一新parser出了甚麼事, 和生成測試用的

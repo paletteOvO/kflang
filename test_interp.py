@@ -142,6 +142,8 @@ test_suite = ["(print 1)", None,
                 (do\
                     (def x 2)\
                     y))", 1, # 保留宣告時的作用域..
+              "0x16", 0x16,
+              "016", int("16", 8)
              ]
 
 @Test
