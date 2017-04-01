@@ -1,4 +1,1 @@
-(do
-    (def (f $expr) (do (print "x") (eval expr)))
-    (f (print "y"))
-)
+(do (def (add ...) (apply + ...)) (add 1 2 3))

@@ -35,15 +35,14 @@ class Func():
             gc_namelist.append(name)
         if self.args_len > 0 and name == "...":
             varargs = [args_vallist.pop()]
-            for index, eachargs in enumerate(args, i):
+            for eachargs in args[1:]:
                 if fexpr:
                     val = eachargs
                 else:
-                    val, _gc = interp.interp0(self.body, env, exec_scope)
+                    val, _gc = interp.interp0(eachargs, env, exec_scope)
                     gc.extend(_gc)
                 varargs.append(val)
             args_vallist.append(varargs)
-
         for index, name in enumerate(args_namelist):
             assert len(args_vallist) == len(args_namelist)
             env.define(

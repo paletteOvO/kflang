@@ -124,13 +124,20 @@ def _set(args, env: Env, scope):
         val, _gc = interp0(args[1], env, scope[1])
         gc.extend(_gc)
         env.set(scope[1], str(args[0]), val)
-    gc.clean(env)
+    env.clean(gc)
     return val, gc
 
 @PyFunc("env")
 def _env(args, env: Env, scope):
     # (set <name> <val>)
     return env.env, None
+
+@PyFunc("apply")
+def _apply(args, env: Env, scope):
+    # (apply <fun> <args>)
+    val, gc = args[0](args[1], env, scope)
+    env.clean(gc)
+    return val, gc
 
 # Math
 @PyFunc("+")
