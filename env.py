@@ -31,6 +31,14 @@ class Env():
     def print(self):
         for k, v in self.env.items():
             print(f"{k} -> {v}")
+    
+    def clean(self, gc):
+        if gc:
+            gc.clean(self)
+    
+    def cleanClosure(self, gc):
+        if gc:
+            gc.cleanClosureGC(self)
 
 
 def init_env(env, buintin_func):
@@ -80,6 +88,7 @@ class GC():
             for var in varlist:
                 # print(f"ClosureGC del {(var, scope)}")
                 del env.env[(var, scope)]
+        self.closureVal = []
     
     def printClosureGC(self):
         print(self.closureVal)

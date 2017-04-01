@@ -14,16 +14,21 @@ def _do(args, env, scope):
     # print("do:", scope)
     res = None
     gc = GC()
+    setFuncGC = GC()
     for i in args:
         # print(":", args)
         res, _gc = interp0(i, env, scope)
-        gc.extend(_gc)
-    gc.clean(env)
+        if isinstance(i, list) and len(i) > 0 and i[0] == "set" and is_func(res):
+            setFuncGC.extend(_gc)
+        else:
+            gc.extend(_gc)
+    env.clean(gc)
     # print("DO")
     # gc.printClosureGC()
     if not is_func(res):
-        gc.cleanClosureGC(env)
+        env.cleanClosure(gc)
     # print("==")
+    gc.extend(setFuncGC)
     return res, gc
 
 @PyFunc("def", fexpr=True)
@@ -60,16 +65,14 @@ def _lazy(args, env: Env, scope):
 def _if(args, env, scope):
     # (if <b> <t> <f>)
     val = None
-    gc = GC()
     boolean, _gc = interp0(args[0], env, scope)
-    gc.extend(_gc)
+    env.clean(_gc)
     if boolean is True:
         val, _gc = interp0(args[1], env, scope)
-        gc.extend(_gc)
+        env.clean(_gc)
     elif boolean is False and len(args) > 2:
         val, _gc = interp0(args[2], env, scope)
-        gc.extend(_gc)
-    gc.clean(env)
+        env.clean(_gc)
     return val, None
 
 @PyFunc("let", fexpr=True)
@@ -78,22 +81,29 @@ def _let(args, env, scope):
     gc = GC()
     varlist = []
     for i in args[0]:
+        val, _gc = interp0(i[1], env, scope)
+        env.clean(_gc)
         env.define(
             scope, # scope
             str(i[0]), # var name
-            interp0(i[1], env, scope)[0]) # value
+            val) # value
         varlist.append(str(i[0]))
     gc.add(scope, varlist)
     val, _gc = interp0(args[1], env, scope)
-    gc.clean(env)
-    _gc.clean(env)
+    env.clean(gc)
+    env.clean(_gc)
     return val, None
 
 @PyFunc("while", fexpr=True)
 def _while(args: List, env: Env, scope: Tuple):
     # (while <bool> <body>)
-    while interp0(args[0], env, scope)[0]:
-        interp0(args[1], env, scope)
+    val, _gc = interp0(args[0], env, scope)
+    env.clean(_gc)
+    while val:
+        _, _gc = interp0(args[1], env, scope)
+        val, _gc1 = interp0(args[0], env, scope)
+        env.clean(_gc)
+        env.clean(_gc1)
     return None, None
 
 @PyFunc("call/cc")
@@ -108,14 +118,14 @@ def _set(args, env: Env, scope):
     # (set <name> <val>)
     gc = GC()
     if isinstance(args[0], list):
-        fn = Func(args[0][1:], args[1], scope[1])
-        env.set(scope[1], str(args[0][0]), fn)
+        val = Func(args[0][1:], args[1], scope[1])
+        env.set(scope[1], str(args[0][0]), val)
     else:
         val, _gc = interp0(args[1], env, scope[1])
         gc.extend(_gc)
         env.set(scope[1], str(args[0]), val)
     gc.clean(env)
-    return None, None
+    return val, gc
 
 @PyFunc("env")
 def _env(args, env: Env, scope):

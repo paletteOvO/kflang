@@ -148,11 +148,7 @@ test_suite = ["(print 1)", None,
               "(do (def f (do ((fn (x) (fn (y) x)) 1))) (f 2))", 1, # ...拒絕此等詭異寫法QAQ
               "(do (def f nil) (do (set f ((fn (x) (fn (y) x)) 1))) (f 2))", 1, # 誒函數閉包就是麻煩...
               "(((do ((do (fn (x) (fn (y) (fn (z) (+ x y z))))) 1)) 2) 3)", 6,
-              "(do (def i 100) (while (> i 0) (do (set i (- i 1)) (((do ((do (fn (x) (fn (y) (fn (z) (+ x y z))))) 1)) 2) 3))) (. (env) __len__))",
-                TestFunc(lambda x: x==41 or x==56),
-                # 測驗後想個辦法弄引用計數... #誒感覺這也可以, 也不是非得引用計數
              ]
-
 @Test
 def test_sameenv():
     """
@@ -172,6 +168,20 @@ def test_diffenv():
     """
     unittest(lambda: None, lambda _, y: interp(parser(y)[0]), test_suite)
 
+@Test
+def test_do_env():
+    """
+    Quote by (do )
+    """
+    env0 = env.Env()
+    def _fun(e, y):
+        return interp0(parser(f"(do {y})")[0], e, None)[0]
+    unittest(lambda: env0, _fun, test_suite + \
+    ["(do (def i 100)\
+          (while (> i 0)\
+          (do (set i (- i 1))\
+              (((do ((do (fn (x) (fn (y) (fn (z) (+ x y z))))) 1)) 2) 3)))\
+          (. (env) __len__))", 44])
 
 if __name__ == '__main__':
     starttest()
