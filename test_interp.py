@@ -182,7 +182,7 @@ def test_do_env():
           (while (> i 0)\
           (do (set i (- i 1))\
               (((do ((do (fn (x) (fn (y) (fn (z) (+ x y z))))) 1)) 2) 3)))\
-          (. (env) __len__))", 44])
+          (. (env) __len__))", 45])
 
 if __name__ == '__main__':
     starttest()
