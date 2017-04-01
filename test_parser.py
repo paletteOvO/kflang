@@ -1,5 +1,4 @@
 import env
-from interp import parser, _parser, interp, interp0
 from unittest import Test, unittest, starttest
 from type import String, Quote
 
