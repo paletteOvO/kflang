@@ -14,12 +14,12 @@ def _do(args, env, scope):
     # print("do:", scope)
     res = None
     gc = GC()
-    setFuncGC = GC()
+    funcGC = GC()
     for i in args:
         # print(":", args)
         res, _gc = interp0(i, env, scope)
-        if isinstance(i, list) and len(i) > 0 and i[0] == "set" and is_func(res):
-            setFuncGC.extend(_gc)
+        if isinstance(i, list) and i and is_func(res):
+            funcGC.extend(_gc)
         else:
             gc.extend(_gc)
     env.clean(gc)
@@ -28,7 +28,7 @@ def _do(args, env, scope):
     if not is_func(res):
         env.cleanClosure(gc)
     # print("==")
-    gc.extend(setFuncGC)
+    gc.extend(funcGC)
     return res, gc
 
 @PyFunc("def", fexpr=True)
