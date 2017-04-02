@@ -1,0 +1,4 @@
+(def x 1)
+(def (f) x)
+(def (f2 x) (f))
+(f2 2)

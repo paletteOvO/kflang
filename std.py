@@ -38,8 +38,8 @@ def _def(args, env, scope):
     gc = GC()
     varlist = []
     if isinstance(args[0], list):
-        fn = Func(args[0][1:], args[1], scope[1])
         var = str(args[0][0])
+        fn = Func(args[0][1:], args[1], scope, var)
         varlist.append(var)
         env.define(scope[1], var, fn)
     else:

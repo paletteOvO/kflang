@@ -39,7 +39,7 @@ class Func():
                 if fexpr:
                     val = eachargs
                 else:
-                    val, _gc = interp.interp0(eachargs, env, exec_scope)
+                    val, _gc = interp.interp0(eachargs, env, scope)
                     gc.extend(_gc)
                 varargs.append(val)
             args_vallist.append(varargs)
