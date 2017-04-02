@@ -14,7 +14,7 @@ class Func():
     def __call__(self, args, env, scope):
         # ((lambda (...) ...) 1)
         assert len(args) >= self.args_len
-        self.runtime += 1
+        self.runtime -= 1
         exec_scope = (self.runtime, self.closure)
         gc = GC()
         gc_namelist = []
