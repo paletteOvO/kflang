@@ -54,7 +54,7 @@ class Func():
         if isinstance(val, Func):
             gc.addClosureGC(exec_scope, gc_namelist)
         else:
-            gc.cleanClosureGC(env)
+            env.cleanClosure(gc)
             gc.add(exec_scope, gc_namelist)
         return val, gc
     def __str__(self):
@@ -92,7 +92,8 @@ def PyFunc(name, fexpr=False):
 
 class Lazy():
     def __init__(self, scope, body):
-        self.val = Empty()
+        self.val = None
+        self.isEvaled = False
         self.scope = scope
         self.body = body
 
@@ -100,11 +101,11 @@ class Lazy():
         return f"<Lazy-Eval>"
 
     def __call__(self, env):
-        gc = GC()
-        if isinstance(self.val, Empty):
-            self.val, _gc = interp.interp0(self.body, env, self.scope)
-            gc.extend(_gc)
-        gc.clean(env)
+        if self.isEvaled:
+            return self.val
+        self.val, gc = interp.interp0(self.body, env, self.scope)
+        self.isEvaled = True
+        env.clean(gc)
         return self.val
 
 class Empty(): pass

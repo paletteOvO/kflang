@@ -188,7 +188,7 @@ def quote_interp(quote: Quote, env, scope):
             new_quote.append(i)
         else:
             new_quote.append(i)
-    gc.clean(env)
+    env.clean(gc)
     return new_quote, None
 
 def interp(expr):

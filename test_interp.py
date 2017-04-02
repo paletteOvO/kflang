@@ -148,7 +148,8 @@ test_suite = ["(print 1)", None,
               "(do (def f (do ((fn (x) (fn (y) x)) 1))) (f 2))", 1, # ...拒絕此等詭異寫法QAQ
               "(do (def f nil) (do (set f ((fn (x) (fn (y) x)) 1))) (f 2))", 1, # 誒函數閉包就是麻煩...
               "(((do ((do (fn (x) (fn (y) (fn (z) (+ x y z))))) 1)) 2) 3)", 6,
-              "(do (def (add ...) (apply + ...)) (add 1 2 3))", 6
+              "(do (def (add ...) (apply + ...)) (add 1 2 3))", 6,
+              "(do (load \"st.kf\") (f 1))", 2
              ]
 @Test
 def test_sameenv():
@@ -182,7 +183,7 @@ def test_do_env():
           (while (> i 0)\
           (do (set i (- i 1))\
               (((do ((do (fn (x) (fn (y) (fn (z) (+ x y z))))) 1)) 2) 3)))\
-          (. (env) __len__))", 45])
+          (. (env) __len__))", 46])
 
 if __name__ == '__main__':
     starttest()

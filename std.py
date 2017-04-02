@@ -65,15 +65,18 @@ def _lazy(args, env: Env, scope):
 def _if(args, env, scope):
     # (if <b> <t> <f>)
     val = None
+    gc = GC()
     boolean, _gc = interp0(args[0], env, scope)
+    gc.extend(_gc)
     env.clean(_gc)
     if boolean is True:
         val, _gc = interp0(args[1], env, scope)
-        env.clean(_gc)
+        gc.extend(_gc)
     elif boolean is False and len(args) > 2:
         val, _gc = interp0(args[2], env, scope)
-        env.clean(_gc)
-    return val, None
+        gc.extend(_gc)
+    env.clean(gc)
+    return val, gc
 
 @PyFunc("let", fexpr=True)
 def _let(args, env, scope):
@@ -138,6 +141,16 @@ def _apply(args, env: Env, scope):
     val, gc = args[0](args[1], env, scope)
     env.clean(gc)
     return val, gc
+
+@PyFunc("load")
+def _load(args, env: Env, scope):
+    # (load <fileName))
+    gc = GC()
+    with open(args[0], "r", encoding="utf8") as f:
+        for i in parser(f.read()):
+            val, _gc = interp0(i, env, scope[1][1])
+            gc.extend(_gc)
+    return None, gc
 
 # Math
 @PyFunc("+")
@@ -288,7 +301,7 @@ def _map(args, env: Env, scope):
     res = Quote()
     for i in args[1]:
         val, _gc = args[0]([i], env, scope)
-        _gc.clean(env)
+        env.clean(_gc)
         res.append(val)
     return res, None
 
@@ -302,7 +315,7 @@ def _reduce(args, env: Env, scope):
     lastres = args[2]
     for i in args[1]:
         lastres, _gc = args[0]([lastres, i], env, scope)
-        _gc.clean(env)
+        env.clean(_gc)
     return lastres, None
 
 @PyFunc("filter")
@@ -314,7 +327,7 @@ def _filter(args, env: Env, scope):
     res = Quote()
     for i in args[1]:
         val, _gc = args[0]([i], env, scope)
-        _gc.clean(env)
+        env.clean(_gc)
         if val:
             res.append(i)
     return res, None
