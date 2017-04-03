@@ -31,11 +31,11 @@ class Env():
     def print(self):
         for k, v in self.env.items():
             print(f"{k} -> {v}")
-    
+
     def clean(self, gc):
         if gc:
             gc.clean(self)
-    
+
     def cleanClosure(self, gc):
         if gc:
             gc.cleanClosureGC(self)

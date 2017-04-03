@@ -11,7 +11,7 @@ def value_parser(s):
     s = ''.join(s)
     if s.startswith("0x"):
         return int(s, 16)
-    if s.startswith("0"):
+    if s.startswith("0") and "." not in s:
         return int(s, 8)
     try:
         return int(s)
