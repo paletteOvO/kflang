@@ -1,6 +1,6 @@
 # Something Else...
 # What does this lang look like
-`lisp
+```lisp
 (def x 1)
 (print ((fn (y) x) 1)) ; print 1
 (set x (lazy (do (print "x") 2))) ; 延時求值, 不可重複定義
@@ -56,4 +56,4 @@ x ; return 2
   ))
 (quicksort '(5 4 46 465 1 8 58 5 41 81 6 84 1 8))
 ; return '(1, 1, 4, 5, 5, 6, 8, 8, 41, 46, 58, 81, 84, 465)
-`
+```
