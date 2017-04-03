@@ -18,6 +18,8 @@ if __name__ == '__main__':
             try:
                 r = input(">> ")
                 for i in interp.parser(r):
-                    print(interp.interp0(i, env0, None)[0])
+                    val = interp.interp0(i, env0, None)[0]
+                    env0._set(None, "it", val)
+                    print(val)
             except Exception as e:
                 traceback.print_exception(*sys.exc_info())

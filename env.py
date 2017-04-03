@@ -20,6 +20,9 @@ class Env():
             self.env[var] = val
         else:
             raise KeyError
+    
+    def _set(self, scope, name, val):
+        self.env[(scope, name)] = val
 
     def define(self, scope, name, val):
         var = (name, scope)
