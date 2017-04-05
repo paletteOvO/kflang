@@ -23,37 +23,38 @@ def parser(expr):
             buffer.append(char)
     return res
 
-def add(args, fun, FLAG):
-    s = []
-    for i in range(0, len(args)):
-        x = args.pop()
-        if x == "(":
-            break
-        s.append(int(x))
-    print("+", s)
-    if len(FLAG) > 0 and FLAG[-1] == 1:
-        fun.append(sum(s))
-        FLAG.pop()
-        FLAG.append(0)
-    else:
-        args.append(sum(s))
+funDict = {}
+def PyFunc(name, fexpr=False):
+    class PyFunc():
+        def __init__(self, fun):
+            self.fun = fun
+            funDict[name] = self
 
-def do(args, fun, FLAG):
-    s = []
-    for i in range(0, len(args)):
-        x = args.pop()
-        if x == "(":
-            break
-        s.append(x)
-    print("do", s)
-    if  len(FLAG) > 0 and FLAG[-1] == 1:
-        fun.append(s[0])
-        FLAG.pop()
-        FLAG.append(0)
-    else:
-        args.append(s[0])
+        def __call__(self, args, fun, FLAG):
+            args_val = []
+            for i in range(0, len(args)):
+                tmp = args.pop()
+                if tmp == "(":
+                    break
+                args_val.append(tmp)
+            if len(FLAG) > 0 and FLAG[-1] == 1:
+                fun.append(self.fun(args_val))
+                FLAG.pop()
+                FLAG.append(0)
+            else:
+                args.append(self.fun(args_val))
+    return lambda func: PyFunc(func)
 
-funDict = {"+": add, "do": do}
+@PyFunc("+")
+def add(args):
+    print("add", args)
+    return sum(map(int, args))
+
+@PyFunc("do")
+def do(args):
+    print("do", args)
+    return args[-1]
+
 
 def interp(expr):
     scope = None
