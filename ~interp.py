@@ -23,16 +23,37 @@ def parser(expr):
             buffer.append(char)
     return res
 
-def add(args):
+def add(args, fun, FLAG):
     s = []
     for i in range(0, len(args)):
-        if args[-1] == "(":
+        x = args.pop()
+        if x == "(":
             break
-        s.append(int(args.pop()))
+        s.append(int(x))
     print("+", s)
-    args.append(sum(s))
+    if len(FLAG) > 0 and FLAG[-1] == 1:
+        fun.append(sum(s))
+        FLAG.pop()
+        FLAG.append(0)
+    else:
+        args.append(sum(s))
 
-funDict = {"+": add}
+def do(args, fun, FLAG):
+    s = []
+    for i in range(0, len(args)):
+        x = args.pop()
+        if x == "(":
+            break
+        s.append(x)
+    print("do", s)
+    if  len(FLAG) > 0 and FLAG[-1] == 1:
+        fun.append(s[0])
+        FLAG.pop()
+        FLAG.append(0)
+    else:
+        args.append(s[0])
+
+funDict = {"+": add, "do": do}
 
 def interp(expr):
     scope = None
@@ -50,11 +71,11 @@ def interp(expr):
             args.append("(")
         elif i == ")":
             FLAG.pop()
-            funDict[fun.pop()](args)
+            funDict[fun.pop()](args, fun, FLAG)
         elif FLAG[-1] == FLAG_FUN:
             FLAG.pop()
-            fun.append(i)
             FLAG.append(FLAG_ARGS)
+            fun.append(i)
         elif FLAG[-1] == FLAG_ARGS:
             args.append(i)
         print("="*10)
@@ -62,7 +83,7 @@ def interp(expr):
 
 def main():
     from unittest import Test, unittest, starttest
-    test_suite = ["(+ (+ 1 2) 3)", 6]
+    test_suite = ["((do +) 1 2 3)", 6]
     def _fun(_, y):
         return interp(parser(y))
     unittest(lambda: None, _fun, test_suite)
