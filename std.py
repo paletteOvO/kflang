@@ -140,11 +140,15 @@ def _callcc(args, env, scope):
 
 @PyFunc("set", fexpr=True)
 def _set(args, env: Env, scope):
-    # (set <name> <val>)
+    # (set <name> <val>) | (set (<name> <args>) ><body>)
     gc = GC()
     if isinstance(args[0], list):
         val = Func(args[0][1:], args[1], scope[1])
-        env.set(scope[1], str(args[0][0]), val)
+        name = str(args[0][0])
+        if name[0] == "$":
+            env.set(scope[1], name[1:], val)
+        else:
+            env.set(scope[1], name, val)
     else:
         val, _gc = interp0(args[1], env, scope[1])
         gc.extend(_gc)
@@ -154,7 +158,6 @@ def _set(args, env: Env, scope):
 
 @PyFunc("env")
 def _env(args, env: Env, scope):
-    # (set <name> <val>)
     return env.env, None
 
 @PyFunc("apply")

@@ -116,7 +116,6 @@ test_suite = ["(print 1)", None,
                   (myif #t (print #t) (print #f))\
               )", None,
               "(filter (fn (x) #t) '(1 2 3))", Quote([1, 2, 3]),
-              "(filter (fn (x) #f) '(1 2 3))", Quote(),
               "(reduce (fn (x y) (+ x y)) '(1 2 3) 0)", 6,
               "(map (fn (x) (+ x 1)) '(1 2 3))", Quote([2, 3, 4]),
               "(do (def x 1) '(x ,(do x)))", Quote(["x", 1]),

@@ -140,7 +140,7 @@ def interp0(expr, env, scope):
         return expr, None
     elif isinstance(expr, float):
         return expr, None
-    elif is_string(expr):
+    elif type(expr) is String:
         return expr, None
     elif is_none(expr):
         return None, None
@@ -163,6 +163,7 @@ def interp0(expr, env, scope):
         return expr(env), None
     else:
         val = env.get(scope, expr)
+        # print("val", val)
         if is_lazy(val):
             return val(env), None
         else:
