@@ -152,10 +152,11 @@ test_suite = ["(print 1)", None,
               "(do (def x #f)\
                    (def y #t)\
                    (def z (lazy (print \"z\")))\
-                   (load \"st.kf\")\
+                   (load \"std.kf\")\
                    (or x y z))", True,
-              "(do (load \"st.kf\") (and #t #f))", False,
-              "(do (load \"st.kf\") (not #t))", False,
+              "(do (load \"std.kf\") (and #t #f))", False,
+              "(do (load \"std.kf\") (not #t))", False,
+              "(do (load \"std.kf\") (cond #f 1 else 2))", 2,
               "((do (def x 1) (fn () x)))", 1
              ]
 @Test

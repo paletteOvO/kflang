@@ -18,3 +18,12 @@
              (if first
                  (apply and (split ... 1))
                  first))))
+
+(def ($cond $...)
+    ; (cond <<bool|"else"> <expr>>)
+    (let ([else #t]
+          [bool (eval (. ... __getitem__ 0))]
+          [expr (. ... __getitem__ 1)])
+         (if bool
+             (eval expr)
+         (apply cond (split ... 2)))))
