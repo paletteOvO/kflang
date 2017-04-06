@@ -15,18 +15,36 @@ def _do(args, env, scope):
     res = None
     gc = GC()
     funcGC = GC()
+    varlist = []
     for i in args:
         # print(":", args)
-        res, _gc = interp0(i, env, scope)
-        if isinstance(i, list) and i and is_func(res):
-            funcGC.extend(_gc)
-        else:
+        if type(i) is list:
+            fun, _gc = interp0(i[0], env, scope)
             gc.extend(_gc)
-    env.clean(gc)
+            res, _gc = fun(i[1:], env, (0, scope))
+            if fun.name == "set" and is_func(res):
+                # funcGC.extend(_gc)
+                ...
+            if fun.name == "def":
+                # (def (f) x) | (def f x)
+                if isinstance(i[1], list):
+                    name = i[1][0]
+                else:
+                    name = i[1]
+                varlist.append(name)
+            else:
+                gc.extend(_gc)
+        else:
+            res, _gc = interp0(i, env, scope)
+            env.clean(_gc)
     # print("DO")
     # gc.printClosureGC()
-    if not is_func(res):
+    if is_func(res):
+        gc.addClosureGC(scope, varlist)
+    else:
+        gc.add(scope, varlist)
         env.cleanClosure(gc)
+    env.clean(gc)
     # print("==")
     gc.extend(funcGC)
     return res, gc
@@ -39,11 +57,15 @@ def _def(args, env, scope):
     varlist = []
     if isinstance(args[0], list):
         var = str(args[0][0])
+        if var[0] == "$":
+            var = var[1:]
         fn = Func(args[0][1:], args[1], scope, var)
         varlist.append(var)
         env.define(scope[1], var, fn)
     else:
         var = str(args[0])
+        if var[0] == "$":
+            var = var[1:]
         val, _gc = interp0(args[1], env, scope[1])
         varlist.append(var)
         gc.extend(_gc)
@@ -271,15 +293,16 @@ def _exec(args, env, scope):
 
 @PyFunc("eval")
 def _eval(args, env, scope):
-    if is_string(args[0]):
+    if isinstance(args[0], list):
+        ret, _gc = interp0(list(args[0]), env, scope)
+        _gc.clean(env)
+    else:
         gc = GC()
-        for i in parser(args[0]):
+        for i in parser(str(args[0])):
             ret, _gc = interp0(i, env, scope)
             gc.extend(_gc)
         gc.clean(env)
-    else:
-        ret, _gc = interp0(list(args[0]), env, scope)
-        _gc.clean(env)
+
     return ret, None
 
 # STDLIB

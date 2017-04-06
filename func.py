@@ -15,7 +15,11 @@ class Func():
         # ((lambda (...) ...) 1)
         assert len(args) >= self.args_len
         self.runtime -= 1
-        exec_scope = (self.runtime, self.closure)
+        if self.name[0] == "$":
+            exec_scope = (self.runtime, scope)
+        else:
+            exec_scope = (self.runtime, self.closure)
+        # print(exec_scope)
         gc = GC()
         gc_namelist = []
         args_vallist = []
@@ -70,9 +74,9 @@ def PyFunc(name, fexpr=False):
             Env.buintin_func.append((name, self))
 
         def __call__(self, args, env, scope):
+            # print(self.name, "start")
             if fexpr:
                 val, gc = self.func(args, env, scope)
-                return val, gc
             else:
                 self.runtime += 1
                 args_val = []
@@ -83,7 +87,8 @@ def PyFunc(name, fexpr=False):
                     args_val.append(val)
                 val, _gc = self.func(args_val, env, (self.runtime, scope))
                 gc.extend(_gc)
-                return val, gc
+            # print(self.name, "end")
+            return val, gc
 
         def __str__(self):
             return f"<Builtin-Func {self.name}>"

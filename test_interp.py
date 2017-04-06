@@ -150,7 +150,8 @@ test_suite = ["(print 1)", None,
               "(((do ((do (fn (x) (fn (y) (fn (z) (+ x y z))))) 1)) 2) 3)", 6,
               "(apply + '(1 2 3))", 6,
               "(do (def (add ...) (apply + ...)) (add 1 2 3))", 6,
-              "(do (load \"st.kf\") (f 1))", 2
+              "(do (load \"st.kf\") (f 1))", 2,
+              "((do (def x 1) (fn () x)))", 1
              ]
 @Test
 def test_sameenv():
@@ -184,7 +185,8 @@ def test_do_env():
           (while (> i 0)\
           (do (set i (- i 1))\
               (((do ((do (fn (x) (fn (y) (fn (z) (+ x y z))))) 1)) 2) 3)))\
-          (. (env) __len__))", 46])
+          (. (env) __len__))", 47])
+    # print(env0.env)
 
 if __name__ == '__main__':
     starttest()

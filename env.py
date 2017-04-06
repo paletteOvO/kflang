@@ -20,7 +20,7 @@ class Env():
             self.env[var] = val
         else:
             raise KeyError
-    
+
     def _set(self, scope, name, val):
         self.env[(scope, name)] = val
 
@@ -64,8 +64,9 @@ class GC():
             self.otherGC.append(otherGC)
 
     def add(self, scope, varlist):
-        # print(f"add {(scope, varlist)}")
-        self.val.append((scope, varlist))
+        if varlist:
+            # print(f"add {(scope, varlist)}")
+            self.val.append((scope, varlist))
 
     def clean(self, env):
         # print(f"clean {self.val}")
@@ -79,8 +80,9 @@ class GC():
         self.val = []
     
     def addClosureGC(self, scope, varlist):
-        # print(f"ClosureGC add {(scope, varlist)}")
-        self.closureVal.append((scope, varlist))
+        if varlist:
+            # print(f"ClosureGC add {(scope, varlist)}")
+            self.closureVal.append((scope, varlist))
     
     def cleanClosureGC(self, env):
         for i in self.otherGC:
