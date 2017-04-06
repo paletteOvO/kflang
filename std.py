@@ -13,9 +13,8 @@ def _do(args, env, scope):
     # (do ...)
     # print("do:", scope)
     res = None
-    gc = GC()
-    funcGC = GC()
-    varlist = []
+    gc = GC(env)
+    setFunc = []
     for i in args:
         # print(":", args)
         if type(i) is list:
@@ -23,15 +22,7 @@ def _do(args, env, scope):
             gc.extend(_gc)
             res, _gc = fun(i[1:], env, (0, scope))
             if fun.name == "set" and is_func(res):
-                # funcGC.extend(_gc)
-                ...
-            if fun.name == "def":
-                # (def (f) x) | (def f x)
-                if isinstance(i[1], list):
-                    name = i[1][0]
-                else:
-                    name = i[1]
-                varlist.append(name)
+                setFunc.append(res)
             else:
                 gc.extend(_gc)
         else:
@@ -40,20 +31,19 @@ def _do(args, env, scope):
     # print("DO")
     # gc.printClosureGC()
     if is_func(res):
-        gc.addClosureGC(scope, varlist)
-    else:
-        gc.add(scope, varlist)
-        env.cleanClosure(gc)
-    env.clean(gc)
+        setFunc.append(res)
+    for i in setFunc:
+        i.closureGC[1].append(gc)
+    if not setFunc:
+        env.clean(gc)
+    return res, None
     # print("==")
-    gc.extend(funcGC)
-    return res, gc
 
 @PyFunc("def", fexpr=True)
 def _def(args, env, scope):
     # (def <name> <val>)
     # (def (<name> <args>) <body>) => (def <name> (lambda (<args>) <body>))
-    gc = GC()
+    gc = GC(env)
     varlist = []
     if isinstance(args[0], list):
         var = str(args[0][0])
@@ -87,7 +77,7 @@ def _lazy(args, env: Env, scope):
 def _if(args, env, scope):
     # (if <b> <t> <f>)
     val = None
-    gc = GC()
+    gc = GC(env)
     boolean, _gc = interp0(args[0], env, scope)
     gc.extend(_gc)
     env.clean(_gc)
@@ -103,7 +93,7 @@ def _if(args, env, scope):
 @PyFunc("let", fexpr=True)
 def _let(args, env, scope):
     # (let ((<name> <value>) ... ) <body>)
-    gc = GC()
+    gc = GC(env)
     varlist = []
     for i in args[0]:
         val, _gc = interp0(i[1], env, scope)
@@ -141,7 +131,7 @@ def _callcc(args, env, scope):
 @PyFunc("set", fexpr=True)
 def _set(args, env: Env, scope):
     # (set <name> <val>) | (set (<name> <args>) ><body>)
-    gc = GC()
+    gc = GC(env)
     if isinstance(args[0], list):
         val = Func(args[0][1:], args[1], scope[1])
         name = str(args[0][0])
@@ -170,7 +160,7 @@ def _apply(args, env: Env, scope):
 @PyFunc("load")
 def _load(args, env: Env, scope):
     # (load <fileName))
-    gc = GC()
+    gc = GC(env)
     with open(args[0], "r", encoding="utf8") as f:
         for i in parser(f.read()):
             val, _gc = interp0(i, env, scope[1][1])
@@ -298,9 +288,9 @@ def _exec(args, env, scope):
 def _eval(args, env, scope):
     if isinstance(args[0], list):
         ret, _gc = interp0(list(args[0]), env, scope)
-        _gc.clean(env)
+        env.clean(_gc)
     else:
-        gc = GC()
+        gc = GC(env)
         for i in parser(str(args[0])):
             ret, _gc = interp0(i, env, scope)
             gc.extend(_gc)

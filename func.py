@@ -1,6 +1,6 @@
 import interp
 from env import Env, GC
-
+from typing import List
 class Func():
     def __init__(self, args, body, scope, name="lambda"):
         # (lambda (<args>) <body>)
@@ -10,6 +10,7 @@ class Func():
         self.body = body
         self.closure = scope
         self.runtime = 0
+        self.closureGC: List = [1, [None]]
 
     def __call__(self, args, env, scope):
         # ((lambda (...) ...) 1)
@@ -20,7 +21,7 @@ class Func():
         else:
             exec_scope = (self.runtime, self.closure)
         # print(exec_scope)
-        gc = GC()
+        gc = GC(env)
         gc_namelist = []
         args_vallist = []
         args_namelist = self.args_namelist[:]
@@ -55,14 +56,25 @@ class Func():
                 args_vallist[index]) # value
         val, _gc = interp.interp0(self.body, env, exec_scope)
         gc.extend(_gc)
+        gc.add(exec_scope, gc_namelist)
         if isinstance(val, Func):
-            gc.addClosureGC(exec_scope, gc_namelist)
+            val.closureGC[1].append(gc)
+            val.closureGC[1].extend(self.closureGC[1])
+            self.closureGC[0] += 1
+            return val, None
         else:
-            env.cleanClosure(gc)
-            gc.add(exec_scope, gc_namelist)
-        return val, gc
+            env.clean(gc)
+            return val, None
     def __str__(self):
         return f"<Func {self.name}>"
+    
+    def __del__(self):
+        # [<count>, [<GC List>]]
+        self.closureGC[0] -= 1
+        if self.closureGC[0] <= 0:
+            for i in self.closureGC[1]:
+                if i:
+                    i.clean()
 
 def PyFunc(name, fexpr=False):
     class PyFunc(Func):
@@ -78,9 +90,9 @@ def PyFunc(name, fexpr=False):
             if fexpr:
                 val, gc = self.func(args, env, scope)
             else:
-                self.runtime += 1
+                self.runtime -= 1
                 args_val = []
-                gc = GC()
+                gc = GC(env)
                 for i in args:
                     val, _gc = interp.interp0(i, env, scope)
                     gc.extend(_gc)
@@ -92,6 +104,9 @@ def PyFunc(name, fexpr=False):
 
         def __str__(self):
             return f"<Builtin-Func {self.name}>"
+        
+        def __del__(self):
+            pass
 
     return lambda func: PyFunc(name, func)
 

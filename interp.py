@@ -150,7 +150,7 @@ def interp0(expr, env, scope):
         global scopeID
         scopeID += 1
         selfScope = scopeID
-        gc = GC()
+        gc = GC(env)
         fun, _gc = interp0(expr[0], env, scope)
         gc.extend(_gc)
         val, _gc = fun(expr[1:], env, (selfScope, scope))
@@ -173,7 +173,7 @@ def quote_interp(quote: Quote, env, scope):
     # '(x 1 2 3) => '("x" 1 2 3)
     assert is_quote(quote)
     new_quote = Quote()
-    gc = GC()
+    gc = GC(env)
     for i in quote:
         if is_quote(i):
             val, _gc = quote_interp(i, env, scope)

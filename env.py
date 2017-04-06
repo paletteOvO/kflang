@@ -37,12 +37,10 @@ class Env():
 
     def clean(self, gc):
         if gc:
-            gc.clean(self)
+            gc.clean()
 
-    def cleanClosure(self, gc):
-        if gc:
-            gc.cleanClosureGC(self)
-
+    def __delitem__(self, index):
+        del self.env[index]
 
 def init_env(env, buintin_func):
     # print(buintin_func)
@@ -53,13 +51,13 @@ def init_env(env, buintin_func):
     env.define(None, "nil", None)
 
 class GC():
-    def __init__(self):
+    def __init__(self, env):
+        self.env = env
         self.val = []
         self.otherGC = []
-        self.closureVal = []
 
     def extend(self, otherGC):
-        if otherGC:
+        if otherGC and (otherGC.val or otherGC.otherGC):
             # print(f"extend {otherGC.val}")
             self.otherGC.append(otherGC)
 
@@ -68,34 +66,13 @@ class GC():
             # print(f"add {(scope, varlist)}")
             self.val.append((scope, varlist))
 
-    def clean(self, env):
+    def clean(self):
         # print(f"clean {self.val}")
         for i in self.val:
             scope, varlist = i
             for var in varlist:
                 # print(f"del {(var, scope)}")
-                del env.env[(var, scope)]
+                del self.env[(var, scope)]
         for i in self.otherGC:
-            i.clean(env)
+            i.clean()
         self.val = []
-    
-    def addClosureGC(self, scope, varlist):
-        if varlist:
-            # print(f"ClosureGC add {(scope, varlist)}")
-            self.closureVal.append((scope, varlist))
-    
-    def cleanClosureGC(self, env):
-        for i in self.otherGC:
-            i.cleanClosureGC(env)
-        # print(f"ClosureGC clean {self.closureVal}")
-        for i in self.closureVal:
-            scope, varlist = i
-            for var in varlist:
-                # print(f"ClosureGC del {(var, scope)}")
-                del env.env[(var, scope)]
-        self.closureVal = []
-    
-    def printClosureGC(self):
-        print(self.closureVal)
-        for i in self.otherGC:
-            i.printClosureGC()
