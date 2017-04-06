@@ -1,3 +1,4 @@
+import type
 import interp
 from env import Env, GC
 from typing import List
@@ -14,7 +15,6 @@ class Func():
 
     def __call__(self, args, env, scope):
         # ((lambda (...) ...) 1)
-        assert len(args) >= self.args_len
         self.runtime -= 1
         if self.name[0] == "$":
             exec_scope = (self.runtime, scope)
@@ -39,7 +39,8 @@ class Func():
             args_vallist.append(val)
             gc_namelist.append(name)
         if self.args_len > 0 and name == "...":
-            varargs = [args_vallist.pop()]
+            varargs = type.Quote()
+            varargs.append(args_vallist.pop())
             for eachargs in args[1:]:
                 if fexpr:
                     val = eachargs

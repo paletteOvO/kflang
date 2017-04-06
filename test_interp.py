@@ -149,7 +149,13 @@ test_suite = ["(print 1)", None,
               "(((do ((do (fn (x) (fn (y) (fn (z) (+ x y z))))) 1)) 2) 3)", 6,
               "(apply + '(1 2 3))", 6,
               "(do (def (add ...) (apply + ...)) (add 1 2 3))", 6,
-              "(do (load \"st.kf\") (f 1))", 2,
+              "(do (def x #f)\
+                   (def y #t)\
+                   (def z (lazy (print \"z\")))\
+                   (load \"st.kf\")\
+                   (or x y z))", True,
+              "(do (load \"st.kf\") (and #t #f))", False,
+              "(do (load \"st.kf\") (not #t))", False,
               "((do (def x 1) (fn () x)))", 1
              ]
 @Test

@@ -20,6 +20,7 @@ def test_parser():
         "'((x)((x)(x))(x))", Quote([['x'], [['x'], ['x']], ['x']]),
         ";一個空語句會不會掛啊..", None,
         "(fn (x=(do 1)) x)", "",
+        "(do *())", "",
         '(', SyntaxError,
         ')', SyntaxError,
         "\\", SyntaxError,

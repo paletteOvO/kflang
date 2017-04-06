@@ -1,3 +1,16 @@
-(print (. (env) __len__))
-((do ((fn (x) (fn (y) x)) 1)) 2)
-(print (. (env) __len__))
+(def ($or $...)
+     (let ([first (. ... __getitem__ 0)])
+          (if (eval first)
+              first
+              (apply or (split ... 1)))))
+
+(def ($not $_)
+     (if (eval _)
+         #f
+         #t))
+
+(def ($and $...)
+     (let ([first (. ... __getitem__ 0)])
+          (if (eval first)
+              (apply and (split ... 1))
+              first)))

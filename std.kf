@@ -1,0 +1,20 @@
+(def ($or $...)
+    (let ([first (eval (. ... __getitem__ 0))])
+         (if (= (. ... __len__) 1)
+             first
+             (if first
+                 first
+                 (apply or (split ... 1))))))
+
+(def ($not $_)
+     (if (eval _)
+         #f
+         #t))
+
+(def ($and $...)
+    (let ([first (eval (. ... __getitem__ 0))])
+         (if (= (. ... __len__) 1)
+             first
+             (if first
+                 (apply and (split ... 1))
+                 first))))

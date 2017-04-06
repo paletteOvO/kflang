@@ -153,9 +153,10 @@ def _env(args, env: Env, scope):
 @PyFunc("apply")
 def _apply(args, env: Env, scope):
     # (apply <fun> <args>)
+    # print(args)
     val, gc = args[0](args[1], env, scope)
     env.clean(gc)
-    return val, gc
+    return val, None
 
 @PyFunc("load")
 def _load(args, env: Env, scope):
@@ -290,11 +291,9 @@ def _eval(args, env, scope):
         ret, _gc = interp0(list(args[0]), env, scope)
         env.clean(_gc)
     else:
-        gc = GC(env)
         for i in parser(str(args[0])):
             ret, _gc = interp0(i, env, scope)
-            gc.extend(_gc)
-        gc.clean(env)
+            env.clean(_gc)
 
     return ret, None
 
@@ -371,4 +370,6 @@ def _split(args, env: Env, scope):
     if len(args) == 3:
         return Quote(args[0][args[1]:args[2]]), None
     else:
+        assert len(args) == 4
         return Quote(args[0][args[1]:args[2]:args[3]]), None
+
