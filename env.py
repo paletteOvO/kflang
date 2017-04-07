@@ -76,3 +76,6 @@ class GC():
         for i in self.otherGC:
             i.clean()
         self.val = []
+
+    def __del__(self):
+        self.clean()

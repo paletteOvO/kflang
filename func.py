@@ -6,8 +6,29 @@ class Func():
     def __init__(self, args, body, scope, name="lambda"):
         # (lambda (<args>) <body>)
         self.name = name
-        self.args_namelist = args
+        if name[0] == "$":
+            self.dynamic_scope = True
+        else:
+            self.dynamic_scope = False
+        self.args_name = []
+        self.args_fexpr = []
         self.args_len = len(args)
+        self.varargs = False
+        self.varargs_fexpr = False
+        for name in args:
+            if name[0] == "$":
+                self.args_name.append(name[1:])
+                self.args_fexpr.append(True)
+            else:
+                self.args_name.append(name)
+                self.args_fexpr.append(False)
+        if len(self.args_name) > 0 and self.args_name[-1] == "...":
+            self.args_len -= 1
+            self.args_name.pop()
+            self.varargs = True
+            self.varargs_fexpr = self.args_fexpr.pop()
+        # [(f False) (x True) (y True) (... True)]
+        # args_len = 2
         self.body = body
         self.closure = scope
         self.runtime = 0
@@ -15,57 +36,46 @@ class Func():
 
     def __call__(self, args, env, scope):
         # ((lambda (...) ...) 1)
+        assert len(args) >= self.args_len - 1
         self.runtime -= 1
-        if self.name[0] == "$":
+        if self.dynamic_scope:
             exec_scope = (self.runtime, scope)
         else:
             exec_scope = (self.runtime, self.closure)
-        # print(exec_scope)
+        # (f x y ...) => (f 1 2) | (f 1 2 3 4)
+        # (f ...) => (f) | (f 1 2)
+        args_val = []
         gc = GC(env)
-        gc_namelist = []
-        args_vallist = []
-        args_namelist = self.args_namelist[:]
-        for i, name in enumerate(args_namelist):
-            fexpr = False
-            if name[0] == "$":
-                fexpr = True
-                name = name[1:]
-                args_namelist[i] = name
-            if fexpr:
+        for i, name in enumerate(self.args_name):
+            if self.args_fexpr[i]:
                 val = args[i]
             else:
-                val, _gc = interp.interp0(args[i], env, scope)
-                gc.extend(_gc)
-            args_vallist.append(val)
-            gc_namelist.append(name)
-        if self.args_len > 0 and name == "...":
-            varargs = type.Quote()
-            varargs.append(args_vallist.pop())
-            for eachargs in args[1:]:
-                if fexpr:
-                    val = eachargs
-                else:
-                    val, _gc = interp.interp0(eachargs, env, scope)
-                    gc.extend(_gc)
-                varargs.append(val)
-            args_vallist.append(varargs)
-        for index, name in enumerate(args_namelist):
-            assert len(args_vallist) == len(args_namelist)
-            env.define(
-                exec_scope, # scope
-                name, # var name
-                args_vallist[index]) # value
-        val, _gc = interp.interp0(self.body, env, exec_scope)
-        gc.extend(_gc)
-        gc.add(exec_scope, gc_namelist)
+                val, _ = interp.interp0(args[i], env, scope)
+            env.define(exec_scope, # scope
+                       name, # var name
+                       val) # value
+        gc.add(exec_scope, self.args_name)
+        # args = 1, 2; args_name = x, y & ...
+        # args = 1, 2 & 3, 4; args_name = x, y & ...
+        # args = []; args_name = [] & ...
+        # args = [] & 1, 2; args_name = [] & ...
+        if self.varargs:
+            if self.varargs_fexpr:
+                env.define(exec_scope, # scope
+                           "...", # var name
+                           type.Quote(args[len(self.args_name):])) # value
+            else:
+                varargs_val = map(lambda expr: interp.interp0(expr, env, scope)[0], args[len(self.args_name):])
+                env.define(exec_scope, # scope
+                           "...", # var name
+                           type.Quote(varargs_val)) # value
+            gc.add(exec_scope, ["..."])
+        val, _ = interp.interp0(self.body, env, exec_scope)
         if isinstance(val, Func):
             val.closureGC[1].append(gc)
             val.closureGC[1].extend(self.closureGC[1])
             self.closureGC[0] += 1
-            return val, None
-        else:
-            env.clean(gc)
-            return val, None
+        return val, None
     def __str__(self):
         return f"<Func {self.name}>"
     
@@ -124,9 +134,8 @@ class Lazy():
     def __call__(self, env):
         if self.isEvaled:
             return self.val
-        self.val, gc = interp.interp0(self.body, env, self.scope)
+        self.val, _ = interp.interp0(self.body, env, self.scope)
         self.isEvaled = True
-        env.clean(gc)
         return self.val
 
 class Empty(): pass

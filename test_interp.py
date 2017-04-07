@@ -165,8 +165,11 @@ def test_sameenv():
     Same env
     """
     env0 = env.Env()
+    gc = env.GC(env0)
     def _fun(e, y):
-        return interp0(parser(y)[0], e, None)[0]
+        val, _gc = interp0(parser(y)[0], e, None)
+        gc.extend(_gc)
+        return val
     unittest(lambda: env0, _fun, test_suite)
     # print(len(env0.env))
     # env0.print()
@@ -184,14 +187,17 @@ def test_do_env():
     Quote by (do )
     """
     env0 = env.Env()
+    gc = env.GC(env0)
     def _fun(e, y):
-        return interp0(parser(f"(do {y})")[0], e, None)[0]
+        val, _gc = interp0(parser(f"(do {y})")[0], e, None)
+        gc.extend(_gc)
+        return val
     unittest(lambda: env0, _fun, test_suite + \
     ["(do (def i 100)\
           (while (> i 0)\
           (do (set i (- i 1))\
               (((do ((do (fn (x) (fn (y) (fn (z) (+ x y z))))) 1)) 2) 3)))\
-          (. (env) __len__))", 46])
+          (. (env) __len__))", 43])
     # print(env0.env)
 
 if __name__ == '__main__':

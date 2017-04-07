@@ -1,29 +1,30 @@
-(def ($or $...)
-    (let ([first (eval (. ... __getitem__ 0))])
-         (if (= (. ... __len__) 1)
-             first
-             (if first
-                 first
-                 (apply or (split ... 1))))))
+(def ($len lst) (. lst __len__))
+(def ($first lst) (. lst __getitem__ 0))
+(def ($second lst) (. lst __getitem__ 1))
+(def ($rest lst) (split lst 1))
+(def ($empty? lst) (= (len ...) 0))
 
-(def ($not $_)
-     (if (eval _)
+(def ($cond $...)
+    ; (cond <<bool|"else"> <expr>>)
+     (let ([else #t])
+          (if (eval (first ...))
+              (eval (second ...))
+              (apply cond (split ... 2)))))
+
+(def ($or $...)
+    (if (empty? ...)
+        #f
+        (let ([b (eval (first ...))])
+             (if b b (apply or (rest ...))))))
+
+(def (not _)
+     (if _
          #f
          #t))
 
 (def ($and $...)
-    (let ([first (eval (. ... __getitem__ 0))])
-         (if (= (. ... __len__) 1)
-             first
-             (if first
-                 (apply and (split ... 1))
-                 first))))
+    (if (empty? ...)
+        #t
+        (let ([b (eval (first ...))])
+        (if b (apply or (rest ...)) b))))
 
-(def ($cond $...)
-    ; (cond <<bool|"else"> <expr>>)
-    (let ([else #t]
-          [bool (eval (. ... __getitem__ 0))]
-          [expr (. ... __getitem__ 1)])
-         (if bool
-             (eval expr)
-         (apply cond (split ... 2)))))

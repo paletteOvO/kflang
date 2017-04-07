@@ -47,9 +47,9 @@ def _def(args, env, scope):
     varlist = []
     if isinstance(args[0], list):
         var = str(args[0][0])
+        fn = Func(args[0][1:], args[1], scope, var)
         if var[0] == "$":
             var = var[1:]
-        fn = Func(args[0][1:], args[1], scope, var)
         varlist.append(var)
         env.define(scope[1], var, fn)
     else:
@@ -153,6 +153,7 @@ def _env(args, env: Env, scope):
 @PyFunc("apply")
 def _apply(args, env: Env, scope):
     # (apply <fun> <args>)
+    # print(args)
     # print(args)
     val, gc = args[0](args[1], env, scope)
     env.clean(gc)
@@ -287,14 +288,11 @@ def _exec(args, env, scope):
 
 @PyFunc("eval")
 def _eval(args, env, scope):
-    if isinstance(args[0], list):
-        ret, _gc = interp0(list(args[0]), env, scope)
-        env.clean(_gc)
+    # print(args)
+    if is_quote(args[0]):
+        ret, _ = interp0(list(args[0]), env, scope)
     else:
-        for i in parser(str(args[0])):
-            ret, _gc = interp0(i, env, scope)
-            env.clean(_gc)
-
+        ret, _ = interp0(args[0], env, scope)
     return ret, None
 
 # STDLIB
