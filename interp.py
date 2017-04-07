@@ -7,10 +7,13 @@ from type import String, Quote
 
 def value_parser(s):
     if is_quote_by(s, '"'):
+
         return String(''.join(s[1:-1]))
     s = ''.join(s)
     if s.startswith("0x"):
         return int(s, 16)
+    if s.startswith("0b") and "." not in s:
+        return int(s, 2)
     if s.startswith("0") and "." not in s:
         return int(s, 8)
     try:
@@ -36,7 +39,8 @@ def parser(expr):
     ESCAPING_LIST = {
         "n": "\n",
         '"': "\"",
-        "\\": "\\"
+        "\\": "\\",
+        "0": "\0",
     }
     lineNum = 1
     charNum = 0
@@ -55,7 +59,15 @@ def parser(expr):
             if char == "\n":
                 FLAG = FLAG_DEFAULT
         elif FLAG == FLAG_ESCAPING_STRING:
-            if char in ESCAPING_LIST:
+            if char == "x":
+                buffer.append(chr(int(expr[index + 1:index + 3], 16)))
+                index += 2
+                FLAG = FLAG_STRING
+            elif char == "u":
+                buffer.append(chr(int(expr[index + 1:index + 5], 16)))
+                index += 4
+                FLAG = FLAG_STRING
+            elif char in ESCAPING_LIST:
                 buffer.append(ESCAPING_LIST[char])
                 FLAG = FLAG_STRING
             else:

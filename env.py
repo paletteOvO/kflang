@@ -5,9 +5,8 @@ class Env():
         init_env(self, self.buintin_func)
 
     def get(self, scope, name):
-        while (name, scope) not in self.env:
-            if scope is None:
-                return self.env[(name, scope)]
+        while scope is not None and\
+              (name, scope) not in self.env:
             scope = scope[1]
         return self.env[(name, scope)]
 
