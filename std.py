@@ -1,6 +1,6 @@
-from func import PyFunc, Func, Lazy
 from type import is_none, is_int, is_float, is_string, is_quote_by, is_quote, is_func
 from type import String, Quote
+from type import PyFunc, Func, Lazy
 from typing import List, Tuple
 from functools import reduce
 from interp import interp0, parser
