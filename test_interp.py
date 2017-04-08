@@ -157,7 +157,8 @@ test_suite = ["(print 1)", None,
               "(do (load \"std.kf\") (and #t #f))", False,
               "(do (load \"std.kf\") (not #t))", False,
               "(do (load \"std.kf\") (cond #f 1 else 2))", 2,
-              "((do (def x 1) (fn () x)))", 1
+              "((do (def x 1) (fn () x)))", 1,
+              "(eval (read \"(+ 1 2)\"))", 3
              ]
 @Test
 def test_sameenv():
@@ -197,7 +198,7 @@ def test_do_env():
           (while (> i 0)\
           (do (set i (- i 1))\
               (((do ((do (fn (x) (fn (y) (fn (z) (+ x y z))))) 1)) 2) 3)))\
-          (. (env) __len__))", 43])
+          (. (env) __len__))", 44])
     # print(env0.env)
 
 if __name__ == '__main__':

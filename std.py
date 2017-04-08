@@ -295,6 +295,12 @@ def _eval(args, env, scope):
         ret, _ = interp0(args[0], env, scope)
     return ret, None
 
+@PyFunc("read")
+def _eval(args, env, scope):
+    # print(args)
+    assert isinstance(args[0], str)
+    return parser(args[0])[0], None
+
 # STDLIB
 @PyFunc("range")
 def _range(args, env: Env, scope):
