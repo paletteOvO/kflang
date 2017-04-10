@@ -2,7 +2,9 @@ import env
 import interp
 import traceback
 import sys
+import type
 import std
+import os
 
 if __name__ == '__main__':
     if len(sys.argv) == 2:
@@ -14,6 +16,7 @@ if __name__ == '__main__':
                 _, _gc = interp.interp0(i, env0, None)
                 gc.extend(_gc)
     else:
+        type.PyFunc("clear")(lambda _, __, ___: (os.system("cls"), None))
         env0 = env.Env()
         gc = env.GC(env0)
         print("REPL")
