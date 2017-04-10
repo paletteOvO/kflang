@@ -95,7 +95,7 @@ def parser(expr):
             if buffer:
                 l.append(value_parser(buffer))
                 buffer = []
-        elif char == " " or char == "\n":
+        elif char == " " or char == "\n" or char == "\t":
             if char == "\n":
                 lineNum += 1
                 charNum = 0

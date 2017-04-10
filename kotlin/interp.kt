@@ -6,7 +6,7 @@ import java.util.*
  */
 
 // parser str to list, kotlin version
-class Interp() {
+class Parser() {
     class Value(val value: Any?)
     class Quote : Stack<Any>()
     fun value_parser(expr: String): Value {
@@ -15,18 +15,18 @@ class Interp() {
     fun isQuote(expr: Any): Boolean {
         return false
     }
-
-    fun parser(expr: String): Stack<Any> {
+    val FLAG_DEFAULT = 0
+    val FLAG_STRING = 1
+    val FLAG_ESCAPING_STRING = 2
+    val FLAG_COMMENT = 3
+    fun Parse(expr: String): Stack<Any> {
         // TODO custom class to represent subtyping relationship
         val res = Stack<Any>()
         val last = Stack<Stack<Any>>()
         last.push(res)
         val buffer = StringBuilder()
         var FLAG = 0
-        val FLAG_DEFAULT = 0
-        val FLAG_STRING = 1
-        val FLAG_ESCAPING_STRING = 2
-        val FLAG_COMMENT = 3
+
         val ESCAPING_LIST = hashMapOf('n' to '\n', '\"' to '\"', '\\' to '\\')
         var lineNum = 1
         var charNum = 0
