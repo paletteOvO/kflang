@@ -13,7 +13,7 @@ x ; return 2
 (k 1 2 3) ; return 6
 (def (f1 $expr) (do (print "f1") (eval expr))) ; fexpr
 (f1 (print "f1,2")) ; print "f1", print "f1,2"
-(def lambda fn) ; 一切東西都是函數
+(def define def) ; 一切東西都是函數
 (define lambda fn)
 (define Y (lambda (f) 
            ((lambda (u) (u u))
