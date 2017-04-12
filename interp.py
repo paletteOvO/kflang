@@ -146,41 +146,6 @@ def parser(expr):
         buffer = []
     return res
 
-scopeID = 0
-def interp0(expr, env, scope):
-    if isinstance(expr, int):
-        return expr, None
-    elif isinstance(expr, float):
-        return expr, None
-    elif type(expr) is String:
-        return expr, None
-    elif is_none(expr):
-        return None, None
-    elif is_quote(expr):
-        return quote_interp(expr, env, scope)
-    elif isinstance(expr, list):
-        global scopeID
-        scopeID += 1
-        selfScope = scopeID
-        gc = GC(env)
-        fun, _gc = interp0(expr[0], env, scope)
-        gc.extend(_gc)
-        val, _gc = fun(expr[1:], env, (selfScope, scope))
-        gc.extend(_gc)
-        # print(f"interp {fun.name} {selfScope}:")
-        # gc.printClosureGC()
-        # print("="*10)
-        return val, gc
-    elif is_lazy(expr):
-        return expr(env), None
-    else:
-        val = env.get(scope, expr)
-        # print("val", val)
-        if is_lazy(val):
-            return val(env), None
-        else:
-            return val, None
-
 def quote_interp(quote: Quote, env, scope):
     # '(x 1 2 3) => '("x" 1 2 3)
     assert is_quote(quote)

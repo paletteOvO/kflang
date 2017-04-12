@@ -1,4 +1,3 @@
-buintin_func = []
 class Env():
     def __init__(self):
         self.env = dict()
@@ -40,19 +39,8 @@ class Env():
     def __delitem__(self, index):
         del self.env[index]
 
-def Init_Env():
-    # print(buintin_func)
-    env = Env()
-    for i in buintin_func:
-        env.define(None, i[0], i[1])
-    env.define(None, "#t", True)
-    env.define(None, "#f", False)
-    env.define(None, "nil", None)
-    return env
-
 class GC():
-    def __init__(self, env):
-        self.env = env
+    def __init__(self):
         self.val = []
         self.otherGC = []
 
@@ -70,12 +58,14 @@ class GC():
         # print(f"clean {self.val}")
         for i in self.val:
             scope, varlist = i
+            e = Env()
             for var in varlist:
                 # print(f"del {(var, scope)}")
-                del self.env[(var, scope)]
+                del e.env[(var, scope)]
         for i in self.otherGC:
             i.clean()
         self.val = []
 
     def __del__(self):
         self.clean()
+ 

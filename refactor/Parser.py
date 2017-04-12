@@ -1,22 +1,51 @@
 import Expr
+import Type
+
 endl = "\n"
 FLAG_DEFAULT = 0
 FLAG_STRING = 1
 FLAG_ESCAPING_STRING = 2
 FLAG_COMMENT = 3 
+ESCAPING_LIST = {
+    "n": "\n",
+    '"': "\"",
+    "\\": "\\",
+    "0": "\0",
+}
+
+def is_quote_by(s, q):
+    return len(s) > 1 and q == s[0] == s[-1]
+
+def parse_value(s):
+    if is_quote_by(s, '"'):
+        return Expr.Value(String(''.join(s[1:-1])))
+    else:
+        s = ''.join(s)
+        if s.startswith("0x"):
+            return Expr.Value(int(s, 16))
+        elif s.startswith("0b"):
+            return Expr.Value(int(s, 16))
+        elif s.startswith("0") and "." not in s:
+            return Expr.Value(int(s, 8))
+        try:
+            return Expr.Value(int(s))
+        except Exception: pass
+        try:
+            return Expr.Value(float(s))
+        except Exception: pass
+    return Expr.Symbol(val)
+
+def escape(char):
+    if char in ESCAPING_LIST:
+        return ESCAPING_LIST[char]
+    else:
+        raise SyntaxError(f"{char} can't be escaped")
+
 def parse(expr):
-    res = Expr.Expression()
+    res: Expr.Expression = Expr.Expression()
     last = [res]
     buffer = []
-    FLAG = 0# 驚覺自己沒支援注釋
-    # 呃..應該差不多是這樣? 其實我在想會不會用到位運算....
-    ## 感覺好複雜..找天看看能不能想個辦法改改..
-    ESCAPING_LIST = {
-        "n": "\n",
-        '"': "\"",
-        "\\": "\\",
-        "0": "\0",
-    }
+    FLAG = 0
     lineNum = 1
     charNum = 0
     index = -1
@@ -42,11 +71,9 @@ def parse(expr):
                 buffer.append(chr(int(expr[index + 1:index + 5], 16)))
                 index += 4
                 FLAG = FLAG_STRING
-            elif char in ESCAPING_LIST:
-                buffer.append(ESCAPING_LIST[char])
-                FLAG = FLAG_STRING
             else:
-                raise SyntaxError(char)
+                buffer.append(escape(char))
+                FLAG = FLAG_STRING
         elif FLAG == FLAG_STRING:
             if char == "\\":
                 FLAG = FLAG_ESCAPING_STRING
@@ -57,25 +84,25 @@ def parse(expr):
                 buffer.append(char)
         elif char == "(" or char == "[":
             if buffer:
-                last[-1].append(value_parser(buffer))
+                last[-1].append(parse_value(buffer))
                 buffer = []
             if is_quote(last[-1]):
-                new = Quote()
+                new = Type.Quote()
             else:
-                new = []
+                new = Expr.Expression()
             last[-1].append(new)
             last.append(new)
         elif char == ")" or char == "]":
             l = last.pop()
             if buffer:
-                l.append(value_parser(buffer))
+                l.append(parse_value(buffer))
                 buffer = []
         elif char == " " or char == "\n" or char == "\t":
             if char == "\n":
                 lineNum += 1
                 charNum = 0
             if buffer:
-                last[-1].append(value_parser(buffer))
+                last[-1].append(parse_value(buffer))
                 buffer = []
         elif char == "'":
             if index + 1 >= length or\
@@ -94,7 +121,7 @@ def parse(expr):
                expr[index + 1] != "["):
                 raise SyntaxError(f"""{expr.split(endl)[lineNum-1]}\n{'-' * (charNum - 1 + 13)}^""")
             index += 1
-            new = []
+            new = Expr.Expression()
             last[-1].append(new)
             last.append(new)
         elif char == "\"":
@@ -117,6 +144,6 @@ def parse(expr):
         # print(FLAG)
         raise SyntaxError
     if buffer:
-        last[-1].append(value_parser(buffer))
+        last[-1].append(parse_value(buffer))
         buffer = []
     return res
