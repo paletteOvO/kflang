@@ -42,7 +42,7 @@ def escape(char):
         raise SyntaxError(f"{char} can't be escaped")
 
 def parse(expr):
-    res: Expr.Expr = Expr.Expr([])
+    res = []
     last = [res]
     buffer = []
     FLAG = 0

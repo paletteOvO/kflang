@@ -6,10 +6,11 @@ class Interp():
         self.scopeId = 0
 
     def interp(self, expr, scope=None):
-        self.scopeId -= 1
+        self.scopeId += 1
         if type(expr) is Expr.Expr:
             gc = Env.GC()
             fun, _gc = self.interp(expr[0], scope)
+            print("e0", fun)
             gc.extend(_gc)
             val, _gc = fun(expr[1:], (self.scopeId, scope))
             gc.extend(_gc)
@@ -33,10 +34,9 @@ if __name__ == "__main__":
     # Unittest
     import Type
     import Parser
-    expr = Parser.parse("((fn (x) 1) 1)")
+    expr = Parser.parse("((fn (x) 1) 1)")[0]
     print(expr)
-    env = Env.Env()
-    def _fn(args, scope):
-        # (fn (<fun args>) <fun body>)
-        return Func(args[0], args[1], scope), None
-    env.define("fn", Type.PyFunc("fn", _fn, fexpr=True))
+
+    env.define(None, Expr.Symbol("fn"), Type.PyFunc("fn", _fn, fexpr=True))
+    val = Interp(env).interp(expr)[0]
+    print(val)

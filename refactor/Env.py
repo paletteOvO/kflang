@@ -10,7 +10,7 @@ class Env():
               (name, scope) not in self.env:
             scope = scope[1]
         return self.env[(name, scope)]
-
+    
     def set(self, scope, symbol, val):
         name = symbol.val
         var = (name, scope)
@@ -65,11 +65,10 @@ class GC():
             e = Env()
             for var in varlist:
                 # print(f"del {(var, scope)}")
-                del e.env[(var, scope)]
+                del e.env[(var.val, scope)]
         for i in self.otherGC:
             i.clean()
         self.val = []
 
     def __del__(self):
         self.clean()
- 

@@ -8,6 +8,12 @@ class Expr():
 
     def __str__(self):
         return f"<Expr ({' '.join(map(str, self.val))})>"
+    
+    def __getitem__(self, index):
+        return self.val[index]
+
+    def __len__(self):
+        return len(self.val)
 
 class Value():
     def __init__(self, val):
@@ -16,6 +22,10 @@ class Value():
 
     def __getattr__(self, name):
         return getattr(self.val, name)
+    
+    def __call__(self, *args):
+        assert self.type is Type.Func or self.type is Type.PyFunc
+        return self.val(*args)
 
     def __str__(self):
         return f"<{self.type.__name__} {self.val}>"
@@ -47,3 +57,6 @@ class Symbol():
 
     def __str__(self):
         return f"<Symbol {self.val}>"
+    
+    def __getitem__(self, index):
+        return self.val[index]

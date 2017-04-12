@@ -1,4 +1,5 @@
 import Env
+import Expr
 import Interp
 from typing import List
 
@@ -20,10 +21,10 @@ class Func():
         self.varargs_fexpr = False
         for name in args:
             if name[0] == "$":
-                self.args_name.append(Symbol(name[1:]))
+                self.args_name.append(Expr.Symbol(name[1:]))
                 self.args_fexpr.append(True)
             else:
-                self.args_name.append(Symbol(name))
+                self.args_name.append(Expr.Symbol(name))
                 self.args_fexpr.append(False)
         if len(self.args_name) > 0 and self.args_name[-1] == "...":
             self.args_len -= 1
@@ -48,13 +49,13 @@ class Func():
         # (f x y ...) => (f 1 2) | (f 1 2 3 4)
         # (f ...) => (f) | (f 1 2)
         args_val = []
-        gc = GC()
+        gc = Env.GC()
         for i, name in enumerate(self.args_name):
             if self.args_fexpr[i]:
                 val = args[i]
             else:
-                val, _ = interp.interp0(args[i], scope)
-            Env().define(exec_scope, # scope
+                val, _ = Interp.Interp(Env.Env()).interp(args[i], scope)
+            Env.Env().define(exec_scope, # scope
                        name, # var name
                        val) # value
         gc.add(exec_scope, self.args_name)
@@ -64,16 +65,16 @@ class Func():
         # args = [] & 1, 2; args_name = [] & ...
         if self.varargs:
             if self.varargs_fexpr:
-                Env().define(exec_scope, # scope
+                Env.Env().define(exec_scope, # scope
                            "...", # var name
                            type.Quote(args[len(self.args_name):])) # value
             else:
-                varargs_val = map(lambda expr: interp.interp0(expr, scope)[0], args[len(self.args_name):])
+                varargs_val = map(lambda expr: Interp.Interp(Env.Env()).interp(expr, scope)[0], args[len(self.args_name):])
                 Env().define(exec_scope, # scope
                            "...", # var name
                            Type.Quote(varargs_val)) # value
             gc.add(exec_scope, ["..."])
-        val, _ = interp.interp0(self.body, exec_scope)
+        val, _ = Interp.Interp(Env.Env()).interp(self.body, exec_scope)
         if isinstance(val, Func):
             val.closureGC[1].append(gc)
             val.closureGC[1].extend(self.closureGC[1])
@@ -105,9 +106,9 @@ class PyFunc(Func):
         else:
             self.runtime -= 1
             args_val = []
-            gc = GC()
+            gc = Env.GC()
             for i in args:
-                val, _gc = interp.interp0(i, scope)
+                val, _gc = Interp.Interp(Env.Env()).interp(i, scope)
                 gc.extend(_gc)
                 args_val.append(val)
             val, _gc = self.func(args_val, (self.runtime, scope))
