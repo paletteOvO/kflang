@@ -2,11 +2,8 @@ import Env
 import Interp
 from typing import List
 
-Env = Env.Env
 class String(str): pass
 class Quote(list): pass
-class Patt(tuple): pass
-
 
 class Func():
     def __init__(self, args, body, scope, name="lambda"):
@@ -23,10 +20,10 @@ class Func():
         self.varargs_fexpr = False
         for name in args:
             if name[0] == "$":
-                self.args_name.append(name[1:])
+                self.args_name.append(Symbol(name[1:]))
                 self.args_fexpr.append(True)
             else:
-                self.args_name.append(name)
+                self.args_name.append(Symbol(name))
                 self.args_fexpr.append(False)
         if len(self.args_name) > 0 and self.args_name[-1] == "...":
             self.args_len -= 1
@@ -82,6 +79,7 @@ class Func():
             val.closureGC[1].extend(self.closureGC[1])
             self.closureGC[0] += 1
         return val, None
+
     def __str__(self):
         return f"<Func {self.name}>"
     
@@ -93,36 +91,32 @@ class Func():
                 if i:
                     i.clean()
 
-def PyFunc(name, fexpr=False):
-    class PyFunc(Func):
-        def __init__(self, name, func):
-            self.fexpr = fexpr
-            self.name = name
-            self.func = func
-            self.runtime = 0
-            Env().define(None, name, self)
+class PyFunc(Func):
+    def __init__(self, name, func, fexpr):
+        self.fexpr = fexpr
+        self.name = name
+        self.func = func
+        self.runtime = 0
 
-        def __call__(self, args, scope):
-            # print(self.name, "start")
-            if fexpr:
-                val, gc = self.func(args, scope)
-            else:
-                self.runtime -= 1
-                args_val = []
-                gc = GC()
-                for i in args:
-                    val, _gc = interp.interp0(i, scope)
-                    gc.extend(_gc)
-                    args_val.append(val)
-                val, _gc = self.func(args_val, (self.runtime, scope))
+    def __call__(self, args, scope):
+        # print(self.name, "start")
+        if self.fexpr:
+            val, gc = self.func(args, scope)
+        else:
+            self.runtime -= 1
+            args_val = []
+            gc = GC()
+            for i in args:
+                val, _gc = interp.interp0(i, scope)
                 gc.extend(_gc)
-            # print(self.name, "end")
-            return val, gc
+                args_val.append(val)
+            val, _gc = self.func(args_val, (self.runtime, scope))
+            gc.extend(_gc)
+        # print(self.name, "end")
+        return val, gc
 
-        def __str__(self):
-            return f"<Builtin-Func {self.name}>"
-        
-        def __del__(self):
-            pass
-
-    return lambda func: PyFunc(name, func)
+    def __str__(self):
+        return f"<Builtin-Func {self.name}>"
+    
+    def __del__(self):
+        pass

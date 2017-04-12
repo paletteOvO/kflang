@@ -33,7 +33,7 @@ def parse_value(s):
         try:
             return Expr.Value(float(s))
         except Exception: pass
-    return Expr.Symbol(val)
+        return Expr.Symbol(s)
 
 def escape(char):
     if char in ESCAPING_LIST:
@@ -42,7 +42,7 @@ def escape(char):
         raise SyntaxError(f"{char} can't be escaped")
 
 def parse(expr):
-    res: Expr.Expression = Expr.Expression()
+    res: Expr.Expr = Expr.Expr([])
     last = [res]
     buffer = []
     FLAG = 0
@@ -86,10 +86,10 @@ def parse(expr):
             if buffer:
                 last[-1].append(parse_value(buffer))
                 buffer = []
-            if is_quote(last[-1]):
+            if type(last[-1]) is Type.Quote:
                 new = Type.Quote()
             else:
-                new = Expr.Expression()
+                new = Expr.Expr([])
             last[-1].append(new)
             last.append(new)
         elif char == ")" or char == "]":
@@ -110,18 +110,18 @@ def parse(expr):
                expr[index + 1] != "["):
                 raise SyntaxError(f"""{expr.split(endl)[lineNum-1]}\n{'-' * (charNum - 1 + 13)}^""")
             index += 1
-            new = Quote()
+            new = Type.Quote()
             last[-1].append(new)
             last.append(new)
         elif char == ",":
-            if not is_quote(last[-1]):
+            if type(last[-1]) is not Type.Quote:
                 raise SyntaxError(f"""{expr.split(endl)[lineNum-1]}\n{'-' * (charNum - 1 + 13)}^""")
             if index + 1 >= length or\
                (expr[index + 1] != "(" and\
                expr[index + 1] != "["):
                 raise SyntaxError(f"""{expr.split(endl)[lineNum-1]}\n{'-' * (charNum - 1 + 13)}^""")
             index += 1
-            new = Expr.Expression()
+            new = Expr.Expr([])
             last[-1].append(new)
             last.append(new)
         elif char == "\"":
@@ -147,3 +147,10 @@ def parse(expr):
         last[-1].append(parse_value(buffer))
         buffer = []
     return res
+
+if __name__ == "__main__":
+    # Unittest
+    import Type
+    import Parser
+    expr = Parser.parse("(fn (x) 1)")
+    print(expr)

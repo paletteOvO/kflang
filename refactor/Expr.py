@@ -1,20 +1,27 @@
 import Type
-class Expression():
+class Expr():
     def __init__(self, val):
         self.val = val
 
     def __getattr__(self, name):
         return getattr(self.val, name)
 
-class Value(): 
+    def __str__(self):
+        return f"<Expr ({' '.join(map(str, self.val))})>"
+
+class Value():
     def __init__(self, val):
         self.val = val
+        self.type = type(self.val)
 
     def __getattr__(self, name):
         return getattr(self.val, name)
+
+    def __str__(self):
+        return f"<{self.type.__name__} {self.val}>"
 
     def is_type(self, t):
-        return type(self.val) is t
+        return self.type is t
 
     def is_int(self):
         return self.is_type(int)
@@ -37,3 +44,6 @@ class Value():
 class Symbol():
     def __init__(self, val):
         self.val = val
+
+    def __str__(self):
+        return f"<Symbol {self.val}>"

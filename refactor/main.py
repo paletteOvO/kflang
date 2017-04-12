@@ -9,11 +9,10 @@ import os
 if __name__ == '__main__':
     if len(sys.argv) == 2:
         file = sys.argv[1]
-        env0 = env.Env()
-        gc = env.GC(env0)
+        gc = env.GC()
         with open(file, "r", encoding="utf-8") as f:
             for i in interp.parser(f.read()):
-                _, _gc = interp.interp0(i, env0, None)
+                _, _gc = interp.interp0(i, None)
                 gc.extend(_gc)
     else:
         type.PyFunc("clear")(lambda _, __, ___: (os.system("cls"), None))

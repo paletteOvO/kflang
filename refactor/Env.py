@@ -1,14 +1,18 @@
 class Env():
-    def __init__(self):
-        self.env = dict()
+    env = {}
 
-    def get(self, scope, name):
+    def reset(self):
+        self.env.clear()
+
+    def get(self, scope, symbol):
+        name = symbol.val
         while scope is not None and\
               (name, scope) not in self.env:
             scope = scope[1]
         return self.env[(name, scope)]
 
-    def set(self, scope, name, val):
+    def set(self, scope, symbol, val):
+        name = symbol.val
         var = (name, scope)
         while scope is not None and var not in self.env:
             var = (name, scope[1])
@@ -18,15 +22,15 @@ class Env():
         else:
             raise KeyError
 
-    def _set(self, scope, name, val):
-        self.env[(scope, name)] = val
+    def _set(self, scope, symbol, val):
+        self.env[(symbol.val, scope)] = val
 
-    def define(self, scope, name, val):
-        var = (name, scope)
+    def define(self, scope, symbol, val):
+        var = (symbol.val, scope)
         if var in self.env:
-            raise KeyError
+            raise KeyError("Defined already")
         else:
-            self.env[(name, scope)] = val
+            self.env[var] = val
 
     def print(self):
         for k, v in self.env.items():
