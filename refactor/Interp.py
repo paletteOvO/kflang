@@ -3,13 +3,15 @@ import Expr
 class Interp():
     def __init__(self, env):
         self.env = env
+        self.scopeId = 0
 
     def interp(self, expr, scope=None):
+        self.scopeId -= 1
         if type(expr) is Expr.Expr:
             gc = Env.GC()
             fun, _gc = self.interp(expr[0], scope)
             gc.extend(_gc)
-            val, _gc = self.interp(fun.body, fun.bind(expr[1:], scope))
+            val, _gc = fun(expr[1:], (self.scopeId, scope))
             gc.extend(_gc)
             # print(f"interp {fun.name} {selfScope}:")
             # gc.printClosureGC()
