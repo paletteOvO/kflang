@@ -1,6 +1,6 @@
-import Env
+import env
 class GC():
-    def __init__(self, env):
+    def __init__(self):
         self.val = []
         self.otherGC = []
 
@@ -20,10 +20,11 @@ class GC():
             scope, varlist = i
             for var in varlist:
                 # print(f"del {(var, scope)}")
-                del Env.env[(var.val, scope)]
+                del env.env[(var.val, scope)]
         for i in self.otherGC:
             i.clean()
         self.val = []
 
     def __del__(self):
-        self.clean()
+        # self.clean()
+        pass

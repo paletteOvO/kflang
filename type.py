@@ -1,49 +1,14 @@
+import interp
 import env
-
-def is_int(s):
-    if isinstance(s, int):
-        return True
-    try:
-        int(s)
-        return True
-    except ValueError:
-        return False
-
-def is_float(s):
-    if isinstance(s, float):
-        return True
-    try:
-        float(s)
-        return True
-    except ValueError:
-        return False
-
-def is_none(s):
-    return s is None
-
-def is_string(s):
-    return isinstance(s, String)
-
-def is_quote(s):
-    return isinstance(s, Quote)
-
-def is_quote_by(s, q):
-    return len(s) > 1 and q == s[0] == s[-1]
-
-def is_func(s):
-    return isinstance(s, Func)
-
-def is_lazy(s):
-    return isinstance(s, Lazy)
+from GC import GC
+import Expr
+from typing import List
 
 class String(str): pass
 class Quote(list): pass
 class Patt(tuple): pass
 
-import type
-import interp
-from env import Env, GC
-from typing import List
+
 class Func():
     def __init__(self, args, body, scope, name="lambda"):
         # (lambda (<args>) <body>)
@@ -76,7 +41,7 @@ class Func():
         self.runtime = 0
         self.closureGC: List = [1, [None]]
 
-    def __call__(self, args, env, scope):
+    def __call__(self, args, scope):
         # ((lambda (...) ...) 1)
         assert len(args) >= self.args_len - 1
         self.runtime -= 1
@@ -87,12 +52,12 @@ class Func():
         # (f x y ...) => (f 1 2) | (f 1 2 3 4)
         # (f ...) => (f) | (f 1 2)
         args_val = []
-        gc = GC(env)
+        gc = GC()
         for i, name in enumerate(self.args_name):
             if self.args_fexpr[i]:
                 val = args[i]
             else:
-                val, _ = interp.interp0(args[i], env, scope)
+                val, _ = interp.interp0(args[i], scope)
             env.define(exec_scope, # scope
                        name, # var name
                        val) # value
@@ -107,12 +72,12 @@ class Func():
                            "...", # var name
                            type.Quote(args[len(self.args_name):])) # value
             else:
-                varargs_val = map(lambda expr: interp.interp0(expr, env, scope)[0], args[len(self.args_name):])
+                varargs_val = map(lambda expr: interp.interp0(expr, scope)[0], args[len(self.args_name):])
                 env.define(exec_scope, # scope
                            "...", # var name
                            type.Quote(varargs_val)) # value
             gc.add(exec_scope, ["..."])
-        val, _ = interp.interp0(self.body, env, exec_scope)
+        val, _ = interp.interp0(self.body, exec_scope)
         if isinstance(val, Func):
             val.closureGC[1].append(gc)
             val.closureGC[1].extend(self.closureGC[1])
@@ -136,21 +101,21 @@ def PyFunc(name, fexpr=False):
             self.name = name
             self.func = func
             self.runtime = 0
-            Env.buintin_func.append((name, self))
+            env.define(None, Expr.Symbol(name), Expr.Value(self))
 
-        def __call__(self, args, env, scope):
+        def __call__(self, args, scope):
             # print(self.name, "start")
             if fexpr:
-                val, gc = self.func(args, env, scope)
+                val, gc = self.func(args, scope)
             else:
                 self.runtime -= 1
                 args_val = []
-                gc = GC(env)
+                gc = GC()
                 for i in args:
-                    val, _gc = interp.interp0(i, env, scope)
+                    val, _gc = interp.interp0(i, scope)
                     gc.extend(_gc)
                     args_val.append(val)
-                val, _gc = self.func(args_val, env, (self.runtime, scope))
+                val, _gc = self.func(args_val, (self.runtime, scope))
                 gc.extend(_gc)
             # print(self.name, "end")
             return val, gc
@@ -173,10 +138,10 @@ class Lazy():
     def __str__(self):
         return f"<Lazy-Eval>"
 
-    def __call__(self, env):
+    def __call__(self):
         if self.isEvaled:
             return self.val
-        self.val, _ = interp.interp0(self.body, env, self.scope)
+        self.val, _ = interp.interp0(self.body, self.scope)
         self.isEvaled = True
         return self.val
 
