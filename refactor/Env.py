@@ -1,8 +1,6 @@
 class Env():
-    env = {}
-
-    def reset(self):
-        self.env.clear()
+    def __init__(self):
+        self.env = {}
 
     def get(self, scope, symbol):
         name = symbol.val
@@ -44,7 +42,8 @@ class Env():
         del self.env[index]
 
 class GC():
-    def __init__(self):
+    def __init__(self, env):
+        self.env = env
         self.val = []
         self.otherGC = []
 
@@ -62,10 +61,9 @@ class GC():
         # print(f"clean {self.val}")
         for i in self.val:
             scope, varlist = i
-            e = Env()
             for var in varlist:
                 # print(f"del {(var, scope)}")
-                del e.env[(var.val, scope)]
+                del self.env.env[(var.val, scope)]
         for i in self.otherGC:
             i.clean()
         self.val = []
