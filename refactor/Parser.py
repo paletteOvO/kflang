@@ -1,5 +1,5 @@
 import Expr
-import Type
+from Type import Quote 
 
 endl = "\n"
 FLAG_DEFAULT = 0
@@ -41,6 +41,28 @@ def escape(char):
     else:
         raise SyntaxError(f"{char} can't be escaped")
 
+class Reader():
+    def __init__(self, str):
+        self.index = 0
+        self.str = str
+        self.len = len(str)
+    def next(self, n=1):
+        if self.index < self.len:
+            v = self.str[self.index:self.index+n]
+            self.index += n
+            return v
+        else:
+            raise StopIteration
+    def back(self, n=1):
+        self.index -= n
+    def __iter__(self):
+        while self.index < self.len:
+            yield self.str[self.index]
+            self.index += 1
+        raise StopIteration
+    def __next__(self):
+        return self.next()
+
 def parse(expr):
     res = []
     last = [res]
@@ -48,12 +70,10 @@ def parse(expr):
     FLAG = 0
     lineNum = 1
     charNum = 0
-    index = -1
     length = len(expr)
-    while index < length - 1:
+    reader = Reader(expr)
+    for char in reader:
         charNum += 1
-        index += 1
-        char = expr[index]
         # print("char:", char)
         # print("res:", res)
         # print("last:", last)
@@ -64,12 +84,10 @@ def parse(expr):
                 FLAG = FLAG_DEFAULT
         elif FLAG == FLAG_ESCAPING_STRING:
             if char == "x":
-                buffer.append(chr(int(expr[index + 1:index + 3], 16)))
-                index += 2
+                buffer.append(chr(int(reader.next(2), 16)))
                 FLAG = FLAG_STRING
             elif char == "u":
-                buffer.append(chr(int(expr[index + 1:index + 5], 16)))
-                index += 4
+                buffer.append(chr(int(reader.next(4), 16)))
                 FLAG = FLAG_STRING
             else:
                 buffer.append(escape(char))
@@ -86,8 +104,8 @@ def parse(expr):
             if buffer:
                 last[-1].append(parse_value(buffer))
                 buffer = []
-            if type(last[-1]) is Type.Quote:
-                new = Type.Quote()
+            if type(last[-1]) is Quote:
+                new = Quote()
             else:
                 new = Expr.Expr([])
             last[-1].append(new)
@@ -105,22 +123,18 @@ def parse(expr):
                 last[-1].append(parse_value(buffer))
                 buffer = []
         elif char == "'":
-            if index + 1 >= length or\
-               (expr[index + 1] != "(" and\
-               expr[index + 1] != "["):
+            n = reader.next()
+            if n != "(" and n != "[":
                 raise SyntaxError(f"""{expr.split(endl)[lineNum-1]}\n{'-' * (charNum - 1 + 13)}^""")
-            index += 1
-            new = Type.Quote()
+            new = Quote()
             last[-1].append(new)
             last.append(new)
         elif char == ",":
             if type(last[-1]) is not Type.Quote:
                 raise SyntaxError(f"""{expr.split(endl)[lineNum-1]}\n{'-' * (charNum - 1 + 13)}^""")
-            if index + 1 >= length or\
-               (expr[index + 1] != "(" and\
-               expr[index + 1] != "["):
+            n = reader.next()
+            if n != "(" and n != "[":
                 raise SyntaxError(f"""{expr.split(endl)[lineNum-1]}\n{'-' * (charNum - 1 + 13)}^""")
-            index += 1
             new = Expr.Expr([])
             last[-1].append(new)
             last.append(new)
@@ -152,5 +166,5 @@ if __name__ == "__main__":
     # Unittest
     import Type
     import Parser
-    expr = Parser.parse("(fn (x) 1)")
+    expr = Parser.parse("(fn (x) 1)")[0]
     print(expr)
