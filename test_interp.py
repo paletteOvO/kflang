@@ -1,9 +1,7 @@
 import env
-from interp import interp, interp0
-from Parser import parse
+from interp import parser, interp, interp0
 from unittest import Test, unittest, starttest, TestFunc
-from Type import Quote, String
-from GC import GC
+from type import Quote, String
 import std
 
 
@@ -167,13 +165,13 @@ def test_sameenv():
     """
     Same env
     """
-    env.reset()
-    gc = GC()
+    env0 = env.Env()
+    gc = env.GC(env0)
     def _fun(e, y):
-        val, _gc = interp0(parser(y)[0] None)
+        val, _gc = interp0(parser(y)[0], e, None)
         gc.extend(_gc)
         return val
-    unittest(lambda: None, _fun, test_suite)
+    unittest(lambda: env0, _fun, test_suite)
     # print(len(env0.env))
     # env0.print()
 
