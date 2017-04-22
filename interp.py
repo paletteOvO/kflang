@@ -7,7 +7,6 @@ from type import String, Quote
 
 def value_parser(s):
     if is_quote_by(s, '"'):
-
         return String(''.join(s[1:-1]))
     s = ''.join(s)
     if s.startswith("0x"):
