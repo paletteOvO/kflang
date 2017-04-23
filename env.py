@@ -1,6 +1,8 @@
+
 class Env():
     buintin_func = []
     def __init__(self):
+        self.ref = dict()
         self.env = dict()
         init_env(self, self.buintin_func)
 
