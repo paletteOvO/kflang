@@ -156,7 +156,6 @@ def _apply(args, env: Env, scope):
     # print(args)
     # print(args)
     val, gc = args[0](args[1], env, scope)
-    env.clean(gc)
     return val, None
 
 @PyFunc("load")

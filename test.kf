@@ -1,16 +1,2 @@
-(def ($or $...)
-     (let ([first (. ... __getitem__ 0)])
-          (if (eval first)
-              first
-              (apply or (split ... 1)))))
-
-(def ($not $_)
-     (if (eval _)
-         #f
-         #t))
-
-(def ($and $...)
-     (let ([first (. ... __getitem__ 0)])
-          (if (eval first)
-              (apply and (split ... 1))
-              first)))
+(load "std.kf")
+(print (cond #f 1 else 2))

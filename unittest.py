@@ -19,14 +19,23 @@ def starttest():
         fun()
         print("=" * 16)
 
+
+def time(fun, *arr):
+    import timeit
+    s = timeit.default_timer()
+    res = fun(*arr)
+    e = timeit.default_timer()
+    return res, ((e - s) * 1000)
+
 def unittest(setup, fun, data):
     """UnitTest"""
     s = setup()
     passed = 0
+    total_time = 0
     for i in range(0, len(data), 2):
         count = int(i/2) + 1
         try:
-            res = fun(s, data[i])
+            res, timing = time(fun, s, data[i])
         except Exception as e0:
             if isinstance(data[i + 1], type) and isinstance(e0, data[i + 1]):
                 print(f"Test{count} Passed")
@@ -37,9 +46,10 @@ def unittest(setup, fun, data):
             continue
         if (isinstance(data[i + 1], TestFunc) and TestFunc(res)) or \
             res == data[i + 1]:
-            print(f"Test{count} Passed")
+            print(f"Test{count} Passed in {timing:.2f}ms")
+            total_time += timing
             passed += 1
         else:
             print(f"Test{count} Failed, Expected '{data[i + 1]}' but got '{res}'")
-    print(f"Passed: {passed}/{int(len(data)/2)}, {int(passed/len(data)*2*100)}% ")
+    print(f"Passed: {passed}/{int(len(data)/2)}, {int(passed/len(data)*2*100)}% in {total_time:.2f}ms")
 

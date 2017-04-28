@@ -120,15 +120,15 @@ test_suite = ["(print 1)", None,
               "(map (fn (x) (+ x 1)) '(1 2 3))", Quote([2, 3, 4]),
               "(do (def x 1) '(x ,(do x)))", Quote(["x", 1]),
               """;快排
-              (do
+              (do (load \"std.kf\")
                   (def (quicksort lst)
-                    (if (= (. lst __len__) 0)
+                    (if (empty? lst)
                         '()
-                        (let ([frist (. lst __getitem__ 0)]
-                              [rest (split lst 1)])
-                            (+ (quicksort (filter (fn (x) (< x frist)) rest))
-                               '(,(do frist))
-                               (quicksort (filter (fn (x) (>= x frist)) rest)))
+                        (let ([n (first lst)]
+                              [other (rest lst)])
+                            (+ (quicksort (filter (fn (x) (< x n)) other))
+                               '(,(do n))
+                               (quicksort (filter (fn (x) (>= x n)) other)))
                         )
                     ))
                   (quicksort '(5 4 46 465 1 8 58 5 41 81 6 84 1 8))
