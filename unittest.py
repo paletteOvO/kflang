@@ -38,7 +38,8 @@ def unittest(setup, fun, data):
             res, timing = time(fun, s, data[i])
         except Exception as e0:
             if isinstance(data[i + 1], type) and isinstance(e0, data[i + 1]):
-                print(f"Test{count} Passed")
+                print(f"Test{count} Passed in {timing:.2f}ms")
+                total_time += timing
                 passed += 1
             else:
                 print(f"Exception at Test{count}")
