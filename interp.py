@@ -13,7 +13,7 @@ def value_parser(s):
         return int(s, 16)
     if s.startswith("0b") and "." not in s:
         return int(s, 2)
-    if s.startswith("0") and "." not in s:
+    if s.startswith("0o") and "." not in s:
         return int(s, 8)
     try:
         return int(s)
