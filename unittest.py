@@ -32,25 +32,21 @@ def unittest(setup, fun, data):
     s = setup()
     passed = 0
     total_time = 0
-    for i in range(0, len(data), 2):
-        count = int(i/2) + 1
+    count = 0
+    for fun_inp, expected_output in zip(data[::2], data[1::2]):
+        count += 1
+        e = None
         try:
-            res, timing = time(fun, s, data[i])
+            res, timing = time(fun, s, fun_inp)
         except Exception as e0:
-            if isinstance(data[i + 1], type) and isinstance(e0, data[i + 1]):
-                print(f"Test{count} Passed in {timing:.2f}ms")
-                total_time += timing
-                passed += 1
-            else:
-                print(f"Exception at Test{count}")
-                traceback.print_exception(*sys.exc_info())
-            continue
-        if (isinstance(data[i + 1], TestFunc) and TestFunc(res)) or \
-            res == data[i + 1]:
+            e = e0
+        if (e and isinstance(e, expected_output)) or\
+           (isinstance(expected_output, TestFunc) and TestFunc(res)) or\
+           res == expected_output:
             print(f"Test{count} Passed in {timing:.2f}ms")
             total_time += timing
             passed += 1
         else:
-            print(f"Test{count} Failed, Expected '{data[i + 1]}' but got '{res}'")
+            print(f"Test{count} Failed, Expected '{data[i + 1]}' but got '{e or res}'")
     print(f"Passed: {passed}/{int(len(data)/2)}, {int(passed/len(data)*2*100)}% in {total_time:.2f}ms")
 
