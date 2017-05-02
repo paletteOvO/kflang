@@ -12,15 +12,15 @@ def test_parser():
         '"\\n"', String("\n"),
         '"123"', String("123"),
         '"\n"', String("\n"),
-        '(print "\\n")', ["print", String("\n")],
+        '(printf "\\n")', ["printf", String("\n")],
         '(+ 1 1)', ["+", 1, 1],
+        "		(+(+ 1				1)1		)", ["+", ["+", 1, 1], 1],
         '((+(+ 1 1) 1)(+ 1 1)(+ 1 1))', [["+", ["+", 1, 1], 1], ["+", 1, 1], ["+", 1, 1]],
-        "'(x)", Quote(["x"]), # (quote (x))
-        "'(x (x))", Quote(["x", ["x"]]),
-        "'((x)((x)(x))(x))", Quote([['x'], [['x'], ['x']], ['x']]),
+        "'x", Quote(["quote", "x"]), # (quote x)
+        "'(x)", Quote(["quote", ["x"]]), # (quote (x))
+        "'(x (x))", Quote(["quote", ["x", ["x"]]]),
+        "'((x)((x)(x))(x))", Quote(["quote", [['x'], [['x'], ['x']], ['x']]]),
         ";一個空語句會不會掛啊..", None,
-        "(fn (x=(do 1)) x)", "",
-        "(do *())", "",
         '(', SyntaxError,
         ')', SyntaxError,
         "\\", SyntaxError,
