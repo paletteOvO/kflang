@@ -30,3 +30,10 @@
         (let ([b (eval (first ...))])
         (if b (apply or (rest ...)) b))))
 
+(def (print obj)
+    (printf (. obj __str__))
+)
+(def (println obj)
+    (printf (. obj __str__))
+    (printf "\n")
+)

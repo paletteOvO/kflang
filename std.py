@@ -259,10 +259,10 @@ def _shr(args, env, scope):
     return args[0] >> args[1], None
 
 # IO
-@PyFunc("print")
-def _print(args, env, scope):
-    # (print ...)
-    print(" ".join(map(str, args)))
+@PyFunc("printf")
+def _printf(args, env, scope):
+    # (printf str args)
+    print(args[0].format(*args[1:]), end='')
     return None, None
 
 @PyFunc("input")
