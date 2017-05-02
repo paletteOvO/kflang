@@ -1,4 +1,8 @@
 import env
+import type
+import interp
+from env import Env, GC
+from typing import List
 
 def is_int(s):
     if isinstance(s, int):
@@ -40,10 +44,6 @@ class String(str): pass
 class Quote(list): pass
 class Patt(tuple): pass
 
-import type
-import interp
-from env import Env, GC
-from typing import List
 class Func():
     def __init__(self, args, body, scope, name="lambda"):
         # (lambda (<args>) <body>)

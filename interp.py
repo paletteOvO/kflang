@@ -83,10 +83,7 @@ def parser(expr):
             if buffer:
                 last[-1].append(value_parser(buffer))
                 buffer = []
-            if is_quote(last[-1]):
-                new = Quote()
-            else:
-                new = []
+            new = []
             last[-1].append(new)
             last.append(new)
         elif char == ")" or char == "]":
@@ -94,6 +91,8 @@ def parser(expr):
             if buffer:
                 l.append(value_parser(buffer))
                 buffer = []
+            if is_quote(last[-1]):
+                last.pop()
         elif char == " " or char == "\n" or char == "\t":
             if char == "\n":
                 lineNum += 1
@@ -102,23 +101,18 @@ def parser(expr):
                 last[-1].append(value_parser(buffer))
                 buffer = []
         elif char == "'":
-            if index + 1 >= length or\
-               (expr[index + 1] != "(" and\
-               expr[index + 1] != "["):
+            # 'x => (quote x), ["quote", "x"]
+            if index + 1 >= length:
                 raise SyntaxError(f"""{expr.split(endl)[lineNum-1]}\n{'-' * (charNum - 1 + 13)}^""")
-            index += 1
             new = Quote()
+            new.append("quote")
             last[-1].append(new)
             last.append(new)
         elif char == ",":
-            if not is_quote(last[-1]):
+            if index + 1 >= length:
                 raise SyntaxError(f"""{expr.split(endl)[lineNum-1]}\n{'-' * (charNum - 1 + 13)}^""")
-            if index + 1 >= length or\
-               (expr[index + 1] != "(" and\
-               expr[index + 1] != "["):
-                raise SyntaxError(f"""{expr.split(endl)[lineNum-1]}\n{'-' * (charNum - 1 + 13)}^""")
-            index += 1
-            new = []
+            new = Quote()
+            new.append("unquote")
             last[-1].append(new)
             last.append(new)
         elif char == "\"":
@@ -137,12 +131,15 @@ def parser(expr):
             FLAG = FLAG_COMMENT
         else:
             buffer.append(char)
-    if len(last) != 1 or (FLAG != FLAG_DEFAULT and FLAG != FLAG_COMMENT):
-        # print(FLAG)
-        raise SyntaxError
     if buffer:
         last[-1].append(value_parser(buffer))
-        buffer = []
+    if is_quote(last[-1]):
+        last.pop()
+    if len(last) != 1:
+        # print(FLAG)
+        raise SyntaxError(f"""len(last) != 1, Unfinished brackets?, last={last}""")
+    if FLAG != FLAG_DEFAULT and FLAG != FLAG_COMMENT:
+        raise SyntaxError("FLAG != FLAG_DEFAULT and FLAG != FLAG_COMMENT, idk what happen yet")
     return res
 
 scopeID = 0
