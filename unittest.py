@@ -46,7 +46,7 @@ def unittest(setup, fun, data):
                 print(f"Exception at Test{count}:")
                 traceback.print_exc()
             continue
-        if (isinstance(expected_output, TestFunc) and TestFunc(res)) or\
+        if (isinstance(expected_output, TestFunc) and expected_output(res)) or\
            res == expected_output:
             print(f"Test{count} Passed in {timing:.2f}ms")
             total_time += timing
