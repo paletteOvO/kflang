@@ -1,5 +1,4 @@
 import traceback
-import sys
 
 test_list = []
 def Test(fun):
@@ -35,18 +34,24 @@ def unittest(setup, fun, data):
     count = 0
     for fun_inp, expected_output in zip(data[::2], data[1::2]):
         count += 1
-        e = None
         try:
             res, timing = time(fun, s, fun_inp)
-        except Exception as e0:
-            e = e0
-        if (e and isinstance(e, expected_output)) or\
-           (isinstance(expected_output, TestFunc) and TestFunc(res)) or\
+        except Exception as e:
+            if isinstance(expected_output, type) and\
+               isinstance(e, expected_output):
+                print(f"Test{count} Passed in {timing:.2f}ms")
+                total_time += timing
+                passed += 1
+            else:
+                print(f"Exception at Test{count}:")
+                traceback.print_exc()
+            continue
+        if (isinstance(expected_output, TestFunc) and TestFunc(res)) or\
            res == expected_output:
             print(f"Test{count} Passed in {timing:.2f}ms")
             total_time += timing
             passed += 1
         else:
-            print(f"Test{count} Failed, Expected '{data[i + 1]}' but got '{e or res}'")
+            print(f"Test{count} Failed, Expected '{expected_output}' but got '{res}'")
     print(f"Passed: {passed}/{int(len(data)/2)}, {int(passed/len(data)*2*100)}% in {total_time:.2f}ms")
 
