@@ -5,10 +5,10 @@ from env import Env, GC
 from type import is_none, is_int, is_float, is_string, is_quote_by, is_quote, is_lazy
 from type import String, Quote
 
-def value_parser(s):
-    if is_quote_by(s, '"'):
-        return String(''.join(s[1:-1]))
-    s = ''.join(s)
+def value_parser(buffer):
+    if is_quote_by(buffer, '"'):
+        return string_parser(buffer[1:-1])
+    s = ''.join(buffer)
     if s.startswith("0x"):
         return int(s, 16)
     if s.startswith("0b") and "." not in s:
@@ -23,123 +23,115 @@ def value_parser(s):
     except Exception: pass
     return s
 
-def parser(expr):
-    endl = "\n"
+def string_parser(buffer):
+    R = Reader(buffer)
+    convertTable = {
+        "\\": "\\",
+        "n": "\n",
+        "t": "\t",
+    }
     res = []
-    last = [res]
-    buffer = []
+    for c in R:
+        if c == "\\":
+            cc = R.next()
+            if cc == "x":
+                res.append(chr(int(R.next(2), 16)))
+            elif cc == "u":
+                res.append(chr(int(R.next(4), 16)))
+            else:
+                res.append(convertTable[cc])
+        else:
+            res.append(c)
+    return String("".join(res))
+
+class Reader():
+    def __init__(self, lst):
+        self.lst = lst
+        self.len = len(lst)
+        self.i = 0
+    def __iter__(self):
+        return self
+    def __next__(self):
+        return self.next()
+    def next(self, n=1):
+        if self.i < self.len:
+            r = self.lst[self.i:self.i+n]
+            self.i += n
+            if self.i > self.len:
+                self.i = self.len
+            if n == 1:
+                return r[0]
+            else:
+                return r
+        raise StopIteration
+    def retrieve(self, n=1):
+        self.i -= n
+        if self.i < 0:
+            self.i = 0
+
+def preProcess(expr):
+    res = []
     FLAG = 0
     FLAG_DEFAULT = 0
-    FLAG_STRING = 1
-    FLAG_ESCAPING_STRING = 2
-    FLAG_COMMENT = 3 # 驚覺自己沒支援注釋
-    # 呃..應該差不多是這樣? 其實我在想會不會用到位運算....
-    ## 感覺好複雜..找天看看能不能想個辦法改改..
-    ESCAPING_LIST = {
-        "n": "\n",
-        '"': "\"",
-        "\\": "\\",
-        "0": "\0",
-    }
-    lineNum = 1
-    charNum = 0
-    index = -1
-    length = len(expr)
-    while index < length - 1:
-        charNum += 1
-        index += 1
-        char = expr[index]
-        # print("char:", char)
-        # print("res:", res)
-        # print("last:", last)
-        # print("buffer:", buffer)
-        # print("FLAG:", FLAG)
+    FLAG_COMMENT = 1
+    BUCKETFLAG = []
+    BUCKETFLAG_NORMAL = 0
+    BUCKETFLAG_QUOTE = 1
+    BUCKETFLAG_UNQUOTE = 2
+    buffer = []
+    def writeBuffer():
+        nonlocal buffer
+        if buffer:
+            res.append(value_parser("".join(buffer)))
+            buffer = []
+    R = Reader(expr)
+    for char in R:
         if FLAG == FLAG_COMMENT:
-            if char == "\n":
-                FLAG = FLAG_DEFAULT
-        elif FLAG == FLAG_ESCAPING_STRING:
-            if char == "x":
-                buffer.append(chr(int(expr[index + 1:index + 3], 16)))
-                index += 2
-                FLAG = FLAG_STRING
-            elif char == "u":
-                buffer.append(chr(int(expr[index + 1:index + 5], 16)))
-                index += 4
-                FLAG = FLAG_STRING
-            elif char in ESCAPING_LIST:
-                buffer.append(ESCAPING_LIST[char])
-                FLAG = FLAG_STRING
+            if char != "\n":
+                continue
             else:
-                raise SyntaxError(char)
-        elif FLAG == FLAG_STRING:
-            if char == "\\":
-                FLAG = FLAG_ESCAPING_STRING
-            elif char == "\"":
                 FLAG = FLAG_DEFAULT
-                buffer.append('"')
-            else:
-                buffer.append(char)
-        elif char == "(" or char == "[":
-            if buffer:
-                last[-1].append(value_parser(buffer))
-                buffer = []
+        if char == "(":
+            writeBuffer()
+            res.append(char)
+            BUCKETFLAG.append(BUCKETFLAG_NORMAL)
+        elif char == ")":
+            writeBuffer()
+            res.append(char)
+            if BUCKETFLAG.pop() > 0:
+                BUCKETFLAG.pop()
+                res.append(")")
+        elif char == " " or char == "\n" or char == "\t":
+            writeBuffer()
+        elif char == ";":
+            FLAG = FLAG_COMMENT
+        elif char == "'":
+            res.extend(["(", "quote"])
+            BUCKETFLAG.append(BUCKETFLAG_QUOTE)
+        elif char == ",":
+            res.extend(["(", "unquote"])
+            BUCKETFLAG.append(BUCKETFLAG_QUOTE)
+        else:
+            buffer.append(char)
+    writeBuffer()
+    while BUCKETFLAG:
+        if BUCKETFLAG.pop() > 0:
+            res.append(")")
+    return res
+
+def parser(expr):
+    res = []
+    last = [res]
+    R = Reader(expr)
+    for obj in R:
+        if obj == "(" or obj == "[":
             new = []
             last[-1].append(new)
             last.append(new)
-        elif char == ")" or char == "]":
+        elif obj == ")" or obj == "]":
             l = last.pop()
-            if buffer:
-                l.append(value_parser(buffer))
-                buffer = []
-            if is_quote(last[-1]):
-                last.pop()
-        elif char == " " or char == "\n" or char == "\t":
-            if char == "\n":
-                lineNum += 1
-                charNum = 0
-            if buffer:
-                last[-1].append(value_parser(buffer))
-                buffer = []
-        elif char == "'":
-            # 'x => (quote x), ["quote", "x"]
-            if index + 1 >= length:
-                raise SyntaxError(f"""{expr.split(endl)[lineNum-1]}\n{'-' * (charNum - 1 + 13)}^""")
-            new = Quote()
-            new.append("quote")
-            last[-1].append(new)
-            last.append(new)
-        elif char == ",":
-            if index + 1 >= length:
-                raise SyntaxError(f"""{expr.split(endl)[lineNum-1]}\n{'-' * (charNum - 1 + 13)}^""")
-            new = Quote()
-            new.append("unquote")
-            last[-1].append(new)
-            last.append(new)
-        elif char == "\"":
-            if FLAG == FLAG_DEFAULT:
-                FLAG = FLAG_STRING
-                buffer.append('"')
-            else:
-                # 估計是沒完結的字串..
-                raise SyntaxError(f"""{expr.split(endl)[lineNum-1]}\n{'-' * (charNum - 1 + 13)}^""")
-        elif char == "\\":
-            if FLAG == FLAG_DEFAULT:
-                raise SyntaxError(f"""{expr.split(endl)[lineNum-1]}\n{'-' * (charNum - 1 + 13)}^""")
-            else:
-                print("WTF??")
-        elif char == ";":
-            FLAG = FLAG_COMMENT
         else:
-            buffer.append(char)
-    if buffer:
-        last[-1].append(value_parser(buffer))
-    if is_quote(last[-1]):
-        last.pop()
-    if len(last) != 1:
-        # print(FLAG)
-        raise SyntaxError(f"""len(last) != 1, Unfinished brackets?, last={last}""")
-    if FLAG != FLAG_DEFAULT and FLAG != FLAG_COMMENT:
-        raise SyntaxError("FLAG != FLAG_DEFAULT and FLAG != FLAG_COMMENT, idk what happen yet")
+            last[-1].append(obj)
     return res
 
 scopeID = 0
