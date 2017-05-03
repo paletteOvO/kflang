@@ -12,7 +12,7 @@ if __name__ == '__main__':
         env0 = env.Env()
         gc = env.GC(env0)
         with open(file, "r", encoding="utf-8") as f:
-            for i in interp.parser(f.read()):
+            for i in interp.parse(f.read()):
                 _, _gc = interp.interp0(i, env0, None)
                 gc.extend(_gc)
     else:
@@ -23,7 +23,7 @@ if __name__ == '__main__':
         while True:
             try:
                 r = input(">> ")
-                for i in interp.parser(r):
+                for i in interp.parse(r):
                     val, _gc = interp.interp0(i, env0, None)
                     gc.extend(_gc)
                     env0._set(None, "it", val)

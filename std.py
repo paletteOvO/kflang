@@ -1,10 +1,11 @@
-from type import is_none, is_int, is_float, is_string, is_quote_by, is_quote, is_func
-from type import String, Quote
-from type import PyFunc, Func, Lazy
-from typing import List, Tuple
 from functools import reduce
-from interp import interp0, parser
-from env import Env, GC
+from typing import List, Tuple
+
+from env import GC, Env
+from interp import interp0, parse
+from type import (Func, Lazy, PyFunc, Quote, String, is_float, is_func, is_int,
+                  is_none, is_quote, is_quote_by, is_string)
+
 
 # Lang
 @PyFunc("do", fexpr=True)
@@ -163,7 +164,7 @@ def _load(args, env: Env, scope):
     # (load <fileName))
     gc = GC(env)
     with open(args[0], "r", encoding="utf8") as f:
-        for i in parser(f.read()):
+        for i in parse(f.read()):
             val, _gc = interp0(i, env, scope[1][1])
             gc.extend(_gc)
     return None, gc
@@ -295,10 +296,10 @@ def _eval(args, env, scope):
     return ret, None
 
 @PyFunc("read")
-def _eval(args, env, scope):
+def _read(args, env, scope):
     # print(args)
     assert isinstance(args[0], str)
-    return parser(args[0])[0], None
+    return parse(args[0])[0], None
 
 # STDLIB
 @PyFunc("range")
@@ -375,4 +376,10 @@ def _split(args, env: Env, scope):
     else:
         assert len(args) == 4
         return Quote(args[0][args[1]:args[2]:args[3]]), None
-
+@PyFunc("concat")
+def _concat(args, env: Env, scope):
+    # (concat arr) (concat arr separator)
+    if len(args) == 2:
+        return args[1].join(args[0]), None
+    else:
+        return ", ".join(args[0]), None

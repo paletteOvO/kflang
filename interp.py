@@ -5,9 +5,9 @@ from env import Env, GC
 from type import is_none, is_int, is_float, is_string, is_quote_by, is_quote, is_lazy
 from type import String, Quote
 
-def value_parser(buffer):
+def parse_value(buffer):
     if is_quote_by(buffer, '"'):
-        return string_parser(buffer[1:-1])
+        return parse_string(buffer[1:-1])
     s = ''.join(buffer)
     if s.startswith("0x"):
         return int(s, 16)
@@ -23,7 +23,7 @@ def value_parser(buffer):
     except Exception: pass
     return s
 
-def string_parser(buffer):
+def parse_string(buffer):
     R = Reader(buffer)
     convertTable = {
         "\\": "\\",
@@ -74,6 +74,8 @@ def preProcess(expr):
     FLAG = 0
     FLAG_DEFAULT = 0
     FLAG_COMMENT = 1
+    FLAG_STRING = 2
+    FLAG_ESCAPESTRING = 3
     BUCKETFLAG = []
     BUCKETFLAG_NORMAL = 0
     BUCKETFLAG_QUOTE = 1
@@ -82,20 +84,32 @@ def preProcess(expr):
     def writeBuffer():
         nonlocal buffer
         if buffer:
-            res.append(value_parser("".join(buffer)))
+            res.append(parse_value("".join(buffer)))
             buffer = []
+    def addBuffer(char):
+        buffer.append(char)
     R = Reader(expr)
     for char in R:
         if FLAG == FLAG_COMMENT:
-            if char != "\n":
-                continue
-            else:
+            if char == "\n":
                 FLAG = FLAG_DEFAULT
-        if char == "(":
+            continue
+        elif FLAG == FLAG_STRING:
+            if char == "\\":
+                FLAG = FLAG_ESCAPESTRING
+            elif char == "\"":
+                FLAG = FLAG_DEFAULT
+            addBuffer(char)
+            continue
+        elif FLAG == FLAG_ESCAPESTRING:
+            FLAG = FLAG_STRING
+            addBuffer(char)
+            continue
+        if char in "([{":
             writeBuffer()
             res.append(char)
             BUCKETFLAG.append(BUCKETFLAG_NORMAL)
-        elif char == ")":
+        elif char in ")]}":
             writeBuffer()
             res.append(char)
             if BUCKETFLAG.pop() > 0:
@@ -103,6 +117,9 @@ def preProcess(expr):
                 res.append(")")
         elif char == " " or char == "\n" or char == "\t":
             writeBuffer()
+        elif char == "\"":
+            FLAG = FLAG_STRING
+            addBuffer(char)
         elif char == ";":
             FLAG = FLAG_COMMENT
         elif char == "'":
@@ -112,24 +129,27 @@ def preProcess(expr):
             res.extend(["(", "unquote"])
             BUCKETFLAG.append(BUCKETFLAG_QUOTE)
         else:
-            buffer.append(char)
+            addBuffer(char)
     writeBuffer()
     while BUCKETFLAG:
         if BUCKETFLAG.pop() > 0:
             res.append(")")
     return res
 
-def parser(expr):
+def parse(expr):
     res = []
     last = [res]
-    R = Reader(expr)
+    R = Reader(preProcess(expr))
     for obj in R:
-        if obj == "(" or obj == "[":
-            new = []
-            last[-1].append(new)
-            last.append(new)
-        elif obj == ")" or obj == "]":
-            l = last.pop()
+        if isinstance(obj, str):
+            if obj in "([{":
+                new = []
+                last[-1].append(new)
+                last.append(new)
+            elif obj in ")]}":
+                l = last.pop()
+            else:
+                last[-1].append(obj)
         else:
             last[-1].append(obj)
     return res

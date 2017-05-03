@@ -1,2 +1,2 @@
 (load "std.kf")
-(print (cond #f 1 else 2))
+(print 1)
