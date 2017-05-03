@@ -1,7 +1,9 @@
+from unittest import Test, starttest, unittest
+
 import env
-from unittest import Test, unittest, starttest
 from interp import parse
-from type import String, Quote
+from type import Quote, String
+
 
 @Test
 def test_parser():

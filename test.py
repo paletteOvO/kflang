@@ -1,8 +1,10 @@
 import cProfile
+
 import env
 import interp
 import std
 import type
+
 e = env.Env()
 tmp = lambda: [interp.interp0(["load", type.String("test.kf")], e, None) for i in range(0, 100)]
 cProfile.run("tmp()", sort="tottime")

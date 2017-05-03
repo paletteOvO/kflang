@@ -1,10 +1,11 @@
+import os
+import sys
+import traceback
+
 import env
 import interp
-import traceback
-import sys
-import type
 import std
-import os
+import type
 
 if __name__ == '__main__':
     if len(sys.argv) == 2:

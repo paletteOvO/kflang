@@ -54,4 +54,3 @@ def unittest(setup, fun, data):
         else:
             print(f"Test{count} Failed, Expected '{expected_output}' but got '{res}'")
     print(f"Passed: {passed}/{int(len(data)/2)}, {int(passed/len(data)*2*100)}% in {total_time:.2f}ms")
-

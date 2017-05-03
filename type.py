@@ -1,7 +1,9 @@
+from typing import List
+
 import env
 import interp
-from env import Env, GC
-from typing import List
+from env import GC, Env
+
 
 def is_int(s):
     if isinstance(s, int):
@@ -29,9 +31,6 @@ def is_string(s):
 
 def is_quote(s):
     return isinstance(s, Quote)
-
-def is_quote_by(s, q):
-    return len(s) > 1 and q == s[0] == s[-1]
 
 def is_func(s):
     return isinstance(s, Func)

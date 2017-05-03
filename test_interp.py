@@ -1,10 +1,9 @@
+from unittest import Test, TestFunc, starttest, unittest
+
 import env
-from interp import parse, interp, interp0
-from unittest import Test, unittest, starttest, TestFunc
-from type import Quote, String
 import std
-
-
+from interp import interp, interp0, parse
+from type import Quote, String
 
 test_suite = ["(printf \"{}\" 1)", None,
               "(printf \"{}\" x)", KeyError,

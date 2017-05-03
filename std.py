@@ -5,12 +5,9 @@ from env import GC, Env
 from interp import interp0, parse
 from type import (Func, Lazy, PyFunc, Quote, String, is_float, is_func, is_int,
                   is_none, is_quote, is_quote_by, is_string)
+from util import *
 
-def scopeDeep(scope):
-    if scope == None:
-        return 0
-    else:
-        return 1 + scopeDeep(scope[1])
+
 # Lang
 @PyFunc("do", fexpr=True)
 def _do(args, env, scope):

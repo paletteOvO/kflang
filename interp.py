@@ -1,9 +1,11 @@
 """
 參照某天跟冰封提起的方法嘗試實現的一個解釋器
 """
-from env import Env, GC
-from type import is_none, is_int, is_float, is_string, is_quote_by, is_quote, is_lazy
-from type import String, Quote
+from env import GC, Env
+from type import (Quote, String, is_float, is_int, is_lazy, is_none, is_quote,
+                  is_string)
+from util import *
+
 
 def parse_value(buffer):
     if is_quote_by(buffer, '"'):
@@ -159,11 +161,6 @@ def parse(expr):
     return res
 
 scopeID = 0
-def scopeDeep(scope):
-    if scope == None:
-        return 0
-    else:
-        return 1 + scopeDeep(scope[1])
 def interp0(expr, env, scope):
     # print(f"{' ' * scopeDeep(scope)} interp {expr} :: {type(expr)}")
     if isinstance(expr, int):
