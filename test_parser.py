@@ -1,6 +1,6 @@
 import env
 from unittest import Test, unittest, starttest
-from interp import parser
+from interp import parse
 from type import String, Quote
 
 @Test
@@ -27,7 +27,7 @@ def test_parser():
         "'", SyntaxError
     ]
     def _fun(_, y):
-        a = parser(y)
+        a = parse(y)
         if len(a) > 0:
             return a[0]
         else:

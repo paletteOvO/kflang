@@ -1,20 +1,20 @@
 import env
-from interp import parser, interp, interp0
+from interp import parse, interp, interp0
 from unittest import Test, unittest, starttest, TestFunc
 from type import Quote, String
 import std
 
 
 
-test_suite = ["(print 1)", None,
-              "(print x)", KeyError,
-              "(print \"x\")", None,
-              "(print \"\\n\")", None,
+test_suite = ["(printf \"{}\" 1)", None,
+              "(printf \"{}\" x)", KeyError,
+              "(printf \"x\")", None,
+              "(printf \"\\n\")", None,
               "(do (+ 1 3) (+ 1 1))", 2,
               "(do (+ 1 2 3 4 5 6 7 8 9 10))", 55,
               "		(+(+ 1				1)1		)", 3,
               "(do (def x 1) x)", 1,
-              "(do (def x (do (def x 2) (print x) 1)) x)", 1,
+              "(do (def x (do (def x 2) (printf \"{}\" x) 1)) x)", 1,
               "((fn (x) x) 1)", 1,
               "((fn (x) ((fn (x) x) x)) ((fn (x) x) 1))", 1,
               "(do (def x (fn () 1)) (x))", 1,
@@ -113,7 +113,7 @@ test_suite = ["(print 1)", None,
                           (eval t)\
                           (eval f))\
                       )\
-                  (myif #t (print #t) (print #f))\
+                  (myif #t (printf \"{}\" #t) (printf \"{}\" #f))\
               )", None,
               "(filter (fn (x) #t) '(1 2 3))", Quote([1, 2, 3]),
               "(reduce (fn (x y) (+ x y)) '(1 2 3) 0)", 6,
@@ -169,7 +169,7 @@ def test_sameenv():
     env0 = env.Env()
     gc = env.GC(env0)
     def _fun(e, y):
-        val, _gc = interp0(parser(y)[0], e, None)
+        val, _gc = interp0(parse(y)[0], e, None)
         gc.extend(_gc)
         return val
     unittest(lambda: env0, _fun, test_suite)
@@ -181,7 +181,7 @@ def test_diffenv():
     """
     Individual env
     """
-    unittest(lambda: None, lambda _, y: interp(parser(y)[0]), test_suite)
+    unittest(lambda: None, lambda _, y: interp(parse(y)[0]), test_suite)
 
 @Test
 def test_do_env():
@@ -191,7 +191,7 @@ def test_do_env():
     env0 = env.Env()
     gc = env.GC(env0)
     def _fun(e, y):
-        val, _gc = interp0(parser(f"(do {y})")[0], e, None)
+        val, _gc = interp0(parse(f"(do {y})")[0], e, None)
         gc.extend(_gc)
         return val
     unittest(lambda: env0, _fun, test_suite + \
@@ -199,7 +199,7 @@ def test_do_env():
           (while (> i 0)\
           (do (set i (- i 1))\
               (((do ((do (fn (x) (fn (y) (fn (z) (+ x y z))))) 1)) 2) 3)))\
-          (. (env) __len__))", 46])
+          (. (env) __len__))", 47])
     # print(env0.env)
 
 if __name__ == '__main__':
