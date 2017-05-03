@@ -1,6 +1,7 @@
 
 class Env():
     buintin_func = []
+    counter = 0
     def __init__(self):
         self.ref = dict()
         self.env = dict()
@@ -9,6 +10,7 @@ class Env():
     def get(self, scope, name):
         while scope is not None and\
               (name, scope) not in self.env:
+            self.counter += 1
             scope = scope[1]
         return self.env[(name, scope)]
 
@@ -74,6 +76,7 @@ class GC():
             for var in varlist:
                 # print(f"del {(var, scope)}")
                 del self.env[(var, scope)]
+                pass
         for i in self.otherGC:
             i.clean()
         self.val = []

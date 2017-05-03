@@ -29,6 +29,7 @@ def parse_string(buffer):
         "\\": "\\",
         "n": "\n",
         "t": "\t",
+        "\"": "\"",
     }
     res = []
     for c in R:
@@ -117,6 +118,9 @@ def preProcess(expr):
                 res.append(")")
         elif char == " " or char == "\n" or char == "\t":
             writeBuffer()
+            if BUCKETFLAG and BUCKETFLAG[-1] > 0:
+                BUCKETFLAG.pop()
+                res.append(")")
         elif char == "\"":
             FLAG = FLAG_STRING
             addBuffer(char)
@@ -155,7 +159,13 @@ def parse(expr):
     return res
 
 scopeID = 0
+def scopeDeep(scope):
+    if scope == None:
+        return 0
+    else:
+        return 1 + scopeDeep(scope[1])
 def interp0(expr, env, scope):
+    # print(f"{' ' * scopeDeep(scope)} interp {expr} :: {type(expr)}")
     if isinstance(expr, int):
         return expr, None
     elif isinstance(expr, float):
@@ -164,9 +174,7 @@ def interp0(expr, env, scope):
         return expr, None
     elif is_none(expr):
         return None, None
-    elif is_quote(expr):
-        return quote_interp(expr, env, scope)
-    elif isinstance(expr, list):
+    elif isinstance(expr, list) or  isinstance(expr, Quote):
         global scopeID
         scopeID += 1
         selfScope = scopeID
@@ -178,6 +186,8 @@ def interp0(expr, env, scope):
         # print(f"interp {fun.name} {selfScope}:")
         # gc.printClosureGC()
         # print("="*10)
+        # print(f"{' ' * scopeDeep(scope)} -> {val} :: {type(val)}")
+        # print(f"{' ' * scopeDeep(scope)}IGC {gc.val}, {gc.otherGC}")
         return val, gc
     elif is_lazy(expr):
         return expr(env), None
@@ -188,29 +198,6 @@ def interp0(expr, env, scope):
             return val(env), None
         else:
             return val, None
-
-def quote_interp(quote: Quote, env, scope):
-    # '(x 1 2 3) => '("x" 1 2 3)
-    assert is_quote(quote)
-    new_quote = Quote()
-    gc = GC(env)
-    for i in quote:
-        if is_quote(i):
-            val, _gc = quote_interp(i, env, scope)
-            gc.extend(_gc)
-            new_quote.append(val)
-        elif isinstance(i, list):
-            val, _gc = interp0(i, env, scope)
-            gc.extend(_gc)
-            new_quote.append(val)
-        elif isinstance(i, int):
-            new_quote.append(i)
-        elif isinstance(i, float):
-            new_quote.append(i)
-        else:
-            new_quote.append(i)
-    env.clean(gc)
-    return new_quote, None
 
 def interp(expr):
     val, _ = interp0(expr, Env(), None)

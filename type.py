@@ -1,5 +1,4 @@
 import env
-import type
 import interp
 from env import Env, GC
 from typing import List
@@ -41,7 +40,43 @@ def is_lazy(s):
     return isinstance(s, Lazy)
 
 class String(str): pass
-class Quote(list): pass
+class Quote():
+    def __init__(self, init):
+        self.val = init
+    def __repr__(self):
+        return f'{self.val}'
+    def __iter__(self):
+        if not isinstance(self.val, list):
+            raise TypeError("'Symbol'")
+        i = 0
+        length = self.val
+        while i < len(self.val):
+            yield self.val[i]
+            i += 1
+    def __getitem__(self, i):
+        if not isinstance(self.val, list):
+            raise TypeError("'Symbol'")
+        return self.val[i]
+    def __setitem__(self, i, v):
+        if not isinstance(self.val, list):
+            raise TypeError("'Symbol'")
+        self.val[i] = v
+    def __len__(self):
+        if not isinstance(self.val, list):
+            raise TypeError("'Symbol'")
+        return len(self.val)
+    def __eq__(self, other):
+        return self.val == other
+    def __add__(self, other):
+        if isinstance(self.val, list) and isinstance(other, Quote) and isinstance(other.val, list):
+            return Quote(self.val + other.val)
+        raise TypeError(f"'unsupported operand type(s) for '{type(self.val)}'' and '{type(other)}''")
+    def append(self, x):
+        if not isinstance(self.val, list):
+            raise TypeError("'Symbol'")
+        self.val.append(x)
+
+
 class Patt(tuple): pass
 
 class Func():
@@ -105,12 +140,12 @@ class Func():
             if self.varargs_fexpr:
                 env.define(exec_scope, # scope
                            "...", # var name
-                           type.Quote(args[len(self.args_name):])) # value
+                           Quote(args[len(self.args_name):])) # value
             else:
-                varargs_val = map(lambda expr: interp.interp0(expr, env, scope)[0], args[len(self.args_name):])
+                varargs_val = list(map(lambda expr: interp.interp0(expr, env, scope)[0], args[len(self.args_name):]))
                 env.define(exec_scope, # scope
                            "...", # var name
-                           type.Quote(varargs_val)) # value
+                           Quote(varargs_val)) # value
             gc.add(exec_scope, ["..."])
         val, _ = interp.interp0(self.body, env, exec_scope)
         if isinstance(val, Func):
@@ -120,7 +155,8 @@ class Func():
         return val, None
     def __str__(self):
         return f"<Func {self.name}>"
-    
+    def __repr__(self):
+        return self.__str__()
     def __del__(self):
         # [<count>, [<GC List>]]
         self.closureGC[0] -= 1
@@ -157,7 +193,8 @@ def PyFunc(name, fexpr=False):
 
         def __str__(self):
             return f"<Builtin-Func {self.name}>"
-        
+        def __repr__(self):
+            return self.__str__()
         def __del__(self):
             pass
 

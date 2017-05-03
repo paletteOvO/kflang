@@ -134,7 +134,7 @@ test_suite = ["(printf \"{}\" 1)", None,
                   (quicksort '(5 4 46 465 1 8 58 5 41 81 6 84 1 8))
               )
               """, Quote([1, 1, 4, 5, 5, 6, 8, 8, 41, 46, 58, 81, 84, 465]),
-              "'() ; 可以愉快的寫註釋了\n", Quote(),
+              "'() ; 可以愉快的寫註釋了\n", Quote([]),
               "(do\
                 (def x 1)\
                 (def y (lazy x))\
@@ -199,8 +199,8 @@ def test_do_env():
           (while (> i 0)\
           (do (set i (- i 1))\
               (((do ((do (fn (x) (fn (y) (fn (z) (+ x y z))))) 1)) 2) 3)))\
-          (. (env) __len__))", 47])
-    # print(env0.env)
+          (. (env) __len__))", 48])
+    print(env0.counter)
 
 if __name__ == '__main__':
     starttest()

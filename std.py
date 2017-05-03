@@ -6,20 +6,25 @@ from interp import interp0, parse
 from type import (Func, Lazy, PyFunc, Quote, String, is_float, is_func, is_int,
                   is_none, is_quote, is_quote_by, is_string)
 
-
+def scopeDeep(scope):
+    if scope == None:
+        return 0
+    else:
+        return 1 + scopeDeep(scope[1])
 # Lang
 @PyFunc("do", fexpr=True)
 def _do(args, env, scope):
     # GC: [(scope varlist) ...]
     # (do ...)
-    # print("do:", scope)
+    # print(f"{' ' * scopeDeep(scope)} do {args}")
     res = None
     gc = GC(env)
     setFunc = []
     for i in args:
-        # print(":", args)
-        if type(i) is list:
+        # print(f"{' ' * scopeDeep(scope)}|do {i}")
+        if type(i) is list or type(i) is Quote:
             fun, _gc = interp0(i[0], env, scope)
+            # print(f"{' ' * scopeDeep(scope)}_GC {gc.val}, {gc.otherGC}")
             gc.extend(_gc)
             res, _gc = fun(i[1:], env, (0, scope))
             if fun.name == "set" and is_func(res):
@@ -28,7 +33,6 @@ def _do(args, env, scope):
                 gc.extend(_gc)
         else:
             res, _gc = interp0(i, env, scope)
-            env.clean(_gc)
     # print("DO")
     # gc.printClosureGC()
     if is_func(res):
@@ -37,6 +41,7 @@ def _do(args, env, scope):
         i.closureGC[1].append(gc)
     if not setFunc:
         env.clean(gc)
+    # print(f"{' ' * scopeDeep(scope)} enddo")
     return res, None
     # print("==")
 
@@ -290,7 +295,7 @@ def _exec(args, env, scope):
 def _eval(args, env, scope):
     # print(args)
     if is_quote(args[0]):
-        ret, _ = interp0(list(args[0]), env, scope)
+        ret, _ = interp0(args[0].val, env, scope)
     else:
         ret, _ = interp0(args[0], env, scope)
     return ret, None
@@ -317,7 +322,7 @@ def _map(args, env: Env, scope):
     assert len(args) == 2
     assert is_func(args[0])
     assert is_quote(args[1])
-    res = Quote()
+    res = Quote([])
     for i in args[1]:
         val, _gc = args[0]([i], env, scope)
         env.clean(_gc)
@@ -343,7 +348,7 @@ def _filter(args, env: Env, scope):
     assert len(args) == 2
     assert is_func(args[0])
     assert is_quote(args[1])
-    res = Quote()
+    res = Quote([])
     for i in args[1]:
         val, _gc = args[0]([i], env, scope)
         env.clean(_gc)
@@ -383,3 +388,26 @@ def _concat(args, env: Env, scope):
         return args[1].join(args[0]), None
     else:
         return ", ".join(args[0]), None
+# Quote
+@PyFunc("quote", fexpr=True)
+def _quote(args, env, scope):
+    # (quote x) | (quote (x))
+    return quote_interp(args[0], env, scope), None
+
+def quote_interp(q, env, scope):
+    # (quote x) | (quote (x))
+    if isinstance(q, list):
+        if len(q) == 2 and q[0] == "unquote":
+            val, _ = interp0(q[1], env, scope)
+            return val
+        else:
+            new_quote = []
+            for i in q:
+                if isinstance(i, list):
+                    val = quote_interp(i, env, scope)
+                    new_quote.append(val)
+                else:
+                    new_quote.append(i)
+            return Quote(new_quote)
+    else:
+        return Quote(q)
