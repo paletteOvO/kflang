@@ -162,7 +162,7 @@ def parse(expr):
 
 scopeID = 0
 def interp0(expr, env, scope):
-    print(f"{' ' * scopeDeep(scope)} interp {expr} :: {type(expr)}")
+    # print(f"{' ' * scopeDeep(scope)} interp {expr} :: {type(expr)}")
     if isinstance(expr, int):
         return expr, None
     elif isinstance(expr, float):

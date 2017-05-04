@@ -94,7 +94,7 @@ def init_env(env, buintin_func):
         env.define(None, i[0], i[1])
     env.define(None, "#t", True)
     env.define(None, "#f", False)
-    env.define(None, "nil", None)
+    env.define(None, "#n", None)
 
 class GC():
     def __init__(self, env):
