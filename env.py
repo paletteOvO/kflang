@@ -1,18 +1,53 @@
-
+from util import *
+def ismatchscope(curr, varscope):
+    # # 0
+    # def x # 0
+    # { # (1, 0)
+    #   x # (1, 0)
+    #   { # (2, (1, 0))
+    #     def x # (2, (1, 0))
+    #     x # (2, (1, 0))
+    #   }
+    # }
+    # curr :: {None | Tuple}, varscope :: {None | Tuple}
+    if varscope is None:
+        return True
+    if curr is None:
+        return False
+    while curr:
+        if curr[0] == varscope[0]:
+            return True
+        curr = curr[1]
+    return False
 class Env():
     buintin_func = []
     counter = 0
     def __init__(self):
-        self.ref = dict()
-        self.env = dict()
+        self.env = dict() # [(name, scope)] -> val
+        self.Renv = dict() # [(name)] -> [scope]
         init_env(self, self.buintin_func)
 
     def get(self, scope, name):
-        while scope is not None and\
-              (name, scope) not in self.env:
-            self.counter += 1
-            scope = scope[1]
+        if name not in self.Renv:
+            raise KeyError
+        # print(f"Name: {name}")
+        # print(f"Renv: {self.Renv[name]}")
+        # print(f"Scope: {scope}")
+        scopeList = list(filter(lambda varscope: ismatchscope(scope, varscope), self.Renv[name]))
+        if not scopeList:
+            raise KeyError(f"{name} from {scope} not in {self.Renv[name]}")
+        # print(f"SuitableScopeList: {scopeList}")
+        deepList = list(map(scopeDeep, scopeList))
+        # print(f"ScopeDeepness: {deepList}")
+        scope = scopeList[deepList.index(max(deepList))]
+        # print(f"Varscope: {scope}")
         return self.env[(name, scope)]
+        #
+        #while scope is not None and\
+        #      (name, scope) not in self.env:
+        #    self.counter += 1
+        #    scope = scope[1]
+        #return self.env[(name, scope)]
 
     def set(self, scope, name, val):
         var = (name, scope)
@@ -28,11 +63,18 @@ class Env():
         self.env[(scope, name)] = val
 
     def define(self, scope, name, val):
+        # print(f"Define: {(name, scope)} -> {val}")
         var = (name, scope)
-        if var in self.env:
-            raise KeyError
+        if name in self.Renv:
+            # print(name, scope, self.Renv[name])
+            if scope in self.Renv[name]:
+                raise KeyError(f"({name}, {scope}) already defined: {self.Renv[name]}")
+            else:
+                self.env[(name, scope)] = val
+                self.Renv[name].add(scope)
         else:
             self.env[(name, scope)] = val
+            self.Renv[name] = {scope}
 
     def print(self):
         for k, v in self.env.items():
@@ -43,6 +85,7 @@ class Env():
             gc.clean()
 
     def __delitem__(self, index):
+        # index = (name, scope)
         del self.env[index]
 
 def init_env(env, buintin_func):
@@ -75,6 +118,7 @@ class GC():
             scope, varlist = i
             for var in varlist:
                 # print(f"del {(var, scope)}")
+                self.env.Renv[var].remove(scope)
                 del self.env[(var, scope)]
                 pass
         for i in self.otherGC:

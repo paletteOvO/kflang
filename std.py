@@ -2,9 +2,9 @@ from functools import reduce
 from typing import List, Tuple
 
 from env import GC, Env
-from interp import interp0, parse
+from interp import interp0, parse, scopeID
 from type import (Func, Lazy, PyFunc, Quote, String, is_float, is_func, is_int,
-                  is_none, is_quote, is_quote_by, is_string)
+                  is_none, is_quote, is_string)
 from util import *
 
 
@@ -23,7 +23,9 @@ def _do(args, env, scope):
             fun, _gc = interp0(i[0], env, scope)
             # print(f"{' ' * scopeDeep(scope)}_GC {gc.val}, {gc.otherGC}")
             gc.extend(_gc)
-            res, _gc = fun(i[1:], env, (0, scope))
+            global scopeID
+            scopeID += 1
+            res, _gc = fun(i[1:], env, (scopeID, scope))
             if fun.name == "set" and is_func(res):
                 setFunc.append(res)
             else:
@@ -408,3 +410,7 @@ def quote_interp(q, env, scope):
             return Quote(new_quote)
     else:
         return Quote(q)
+# Scope
+@PyFunc("scope")
+def _scope(args, env, scope):
+    return scope, None

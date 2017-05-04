@@ -107,17 +107,17 @@ class Func():
         # args_len = 2
         self.body = body
         self.closure = scope
-        self.runtime = 0
         self.closureGC: List = [1, [None]]
 
     def __call__(self, args, env, scope):
         # ((lambda (...) ...) 1)
         assert len(args) >= self.args_len - 1
-        self.runtime -= 1
+        interp.scopeID += 1
+        k = interp.scopeID
         if self.dynamic_scope:
-            exec_scope = (self.runtime, scope)
+            exec_scope = (k, scope)
         else:
-            exec_scope = (self.runtime, self.closure)
+            exec_scope = (k, self.closure)
         # (f x y ...) => (f 1 2) | (f 1 2 3 4)
         # (f ...) => (f) | (f 1 2)
         args_val = []
@@ -170,7 +170,6 @@ def PyFunc(name, fexpr=False):
             self.fexpr = fexpr
             self.name = name
             self.func = func
-            self.runtime = 0
             Env.buintin_func.append((name, self))
 
         def __call__(self, args, env, scope):
@@ -178,14 +177,15 @@ def PyFunc(name, fexpr=False):
             if fexpr:
                 val, gc = self.func(args, env, scope)
             else:
-                self.runtime -= 1
+                interp.scopeID += 1
+                k = interp.scopeID
                 args_val = []
                 gc = GC(env)
                 for i in args:
                     val, _gc = interp.interp0(i, env, scope)
                     gc.extend(_gc)
                     args_val.append(val)
-                val, _gc = self.func(args_val, env, (self.runtime, scope))
+                val, _gc = self.func(args_val, env, (k, scope))
                 gc.extend(_gc)
             # print(self.name, "end")
             return val, gc
