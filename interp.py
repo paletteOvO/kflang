@@ -147,7 +147,7 @@ def parse(expr):
     last = [res]
     R = Reader(preProcess(expr))
     for obj in R:
-        if isinstance(obj, str):
+        if type(obj) is str:
             if obj in "([{":
                 new = []
                 last[-1].append(new)
@@ -162,7 +162,7 @@ def parse(expr):
 
 scopeID = 0
 def interp0(expr, env, scope):
-    # print(f"{' ' * scopeDeep(scope)} interp {expr} :: {type(expr)}")
+    print(f"{' ' * scopeDeep(scope)} interp {expr} :: {type(expr)}")
     if isinstance(expr, int):
         return expr, None
     elif isinstance(expr, float):
