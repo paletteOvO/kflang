@@ -174,7 +174,7 @@ def interp0(expr, env, scope):
         gc = GC(env)
         fun, _gc = interp0(expr[0], env, scope)
         gc.extend(_gc)
-        val, _gc = fun(expr[1:], env, (1, scope))
+        val, _gc = fun(expr[1:], env, (0, scope))
         gc.extend(_gc)
         # print(f"interp {fun.name} {selfScope}:")
         # gc.printClosureGC()
@@ -188,7 +188,7 @@ def interp0(expr, env, scope):
         val = env.get(scope, expr)
         # print("val", val)
         if is_lazy(val):
-            return val(env), None
+            return val(env, expr), None
         else:
             return val, None
 

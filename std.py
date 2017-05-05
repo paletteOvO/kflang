@@ -4,7 +4,7 @@ from typing import List, Tuple
 from env import GC, Env
 from interp import interp0, parse
 from type import (Func, Lazy, PyFunc, Quote, String, is_float, is_func, is_int,
-                  is_none, is_quote, is_string)
+                  is_none, is_quote, is_string, is_lazy)
 from util import *
 
 
@@ -24,7 +24,8 @@ def _do(args, env, scope):
             # print(f"{' ' * scopeDeep(scope)}_GC {gc.val}, {gc.otherGC}")
             gc.extend(_gc)
             res, _gc = fun(i[1:], env, (s, scope))
-            if fun.name == "set" and is_func(res):
+            if fun.name == "set" and (is_func(res) or is_lazy(res)):
+                # print(fun.name)
                 setFunc.append(res)
             else:
                 gc.extend(_gc)

@@ -201,19 +201,23 @@ def PyFunc(name, fexpr=False):
 
 class Lazy():
     def __init__(self, scope, body):
-        self.val = None
-        self.isEvaled = False
         self.scope = scope
         self.body = body
+        self.closureGC: List = [1, [None]]
 
-    def __str__(self):
+    def __repr__(self):
         return f"<Lazy-Eval>"
 
-    def __call__(self, env):
-        if self.isEvaled:
-            return self.val
-        self.val, _ = interp.interp0(self.body, env, self.scope)
-        self.isEvaled = True
-        return self.val
-
+    def __call__(self, env: Env, name):
+        val, _ = interp.interp0(self.body, env, self.scope)
+        env.set(self.scope, name, val)
+        return val
+    
+    def __del__(self):
+        # [<count>, [<GC List>]]
+        self.closureGC[0] -= 1
+        if self.closureGC[0] <= 0:
+            for i in self.closureGC[1]:
+                if i:
+                    i.clean()
 class Empty(): pass
