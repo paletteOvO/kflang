@@ -108,16 +108,16 @@ class Func():
         self.body = body
         self.closure = scope
         self.closureGC: List = [1, [None]]
+        self.runtime = 0
 
     def __call__(self, args, env, scope):
         # ((lambda (...) ...) 1)
         assert len(args) >= self.args_len - 1
-        interp.scopeID += 1
-        k = interp.scopeID
+        self.runtime += 1
         if self.dynamic_scope:
-            exec_scope = (k, scope)
+            exec_scope = (self.runtime, scope)
         else:
-            exec_scope = (k, self.closure)
+            exec_scope = (self.runtime, self.closure)
         # (f x y ...) => (f 1 2) | (f 1 2 3 4)
         # (f ...) => (f) | (f 1 2)
         args_val = []
@@ -126,7 +126,7 @@ class Func():
             if self.args_fexpr[i]:
                 val = args[i]
             else:
-                val, _ = interp.interp0(args[i], env, scope)
+                val, _ = interp.interp0(args[i], env, (i, scope))
             env.define(exec_scope, # scope
                        name, # var name
                        val) # value
@@ -141,7 +141,9 @@ class Func():
                            "...", # var name
                            Quote(args[len(self.args_name):])) # value
             else:
-                varargs_val = list(map(lambda expr: interp.interp0(expr, env, scope)[0], args[len(self.args_name):]))
+                varargs_val = []
+                for i, expr in enumerate(args[len(self.args_name):]):
+                    varargs_val.append(interp.interp0(expr, env, (i, scope))[0])
                 env.define(exec_scope, # scope
                            "...", # var name
                            Quote(varargs_val)) # value
@@ -177,15 +179,13 @@ def PyFunc(name, fexpr=False):
             if fexpr:
                 val, gc = self.func(args, env, scope)
             else:
-                interp.scopeID += 1
-                k = interp.scopeID
                 args_val = []
                 gc = GC(env)
                 for i in args:
                     val, _gc = interp.interp0(i, env, scope)
                     gc.extend(_gc)
                     args_val.append(val)
-                val, _gc = self.func(args_val, env, (k, scope))
+                val, _gc = self.func(args_val, env, (0, scope))
                 gc.extend(_gc)
             # print(self.name, "end")
             return val, gc

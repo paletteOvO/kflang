@@ -160,7 +160,6 @@ def parse(expr):
             last[-1].append(obj)
     return res
 
-scopeID = 0
 def interp0(expr, env, scope):
     # print(f"{' ' * scopeDeep(scope)} interp {expr} :: {type(expr)}")
     if isinstance(expr, int):
@@ -172,13 +171,10 @@ def interp0(expr, env, scope):
     elif is_none(expr):
         return None, None
     elif isinstance(expr, list) or  isinstance(expr, Quote):
-        global scopeID
-        scopeID += 1
-        selfScope = scopeID
         gc = GC(env)
         fun, _gc = interp0(expr[0], env, scope)
         gc.extend(_gc)
-        val, _gc = fun(expr[1:], env, (selfScope, scope))
+        val, _gc = fun(expr[1:], env, (1, scope))
         gc.extend(_gc)
         # print(f"interp {fun.name} {selfScope}:")
         # gc.printClosureGC()
@@ -199,3 +195,9 @@ def interp0(expr, env, scope):
 def interp(expr):
     val, _ = interp0(expr, Env(), None)
     return val
+
+def kfeval(x):
+    x = parse(x)
+    e = Env()
+    for i in range(0, len(x)):
+        interp0(x[i], e, i)

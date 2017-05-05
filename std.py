@@ -2,7 +2,7 @@ from functools import reduce
 from typing import List, Tuple
 
 from env import GC, Env
-from interp import interp0, parse, scopeID
+from interp import interp0, parse
 from type import (Func, Lazy, PyFunc, Quote, String, is_float, is_func, is_int,
                   is_none, is_quote, is_string)
 from util import *
@@ -17,15 +17,13 @@ def _do(args, env, scope):
     res = None
     gc = GC(env)
     setFunc = []
-    for i in args:
+    for s, i in enumerate(args):
         # print(f"{' ' * scopeDeep(scope)}|do {i}")
         if type(i) is list or type(i) is Quote:
             fun, _gc = interp0(i[0], env, scope)
             # print(f"{' ' * scopeDeep(scope)}_GC {gc.val}, {gc.otherGC}")
             gc.extend(_gc)
-            global scopeID
-            scopeID += 1
-            res, _gc = fun(i[1:], env, (scopeID, scope))
+            res, _gc = fun(i[1:], env, (s, scope))
             if fun.name == "set" and is_func(res):
                 setFunc.append(res)
             else:
