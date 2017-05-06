@@ -33,6 +33,7 @@
 (def (print obj) (printf (concat (. obj __str__) " ")))
 
 (def (println obj)
-    (printf (. obj __str__))
-    (printf "\n")
-)
+    (do
+        (printf (. obj __str__))
+        (printf "\n")
+    ))
