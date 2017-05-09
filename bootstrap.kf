@@ -1,0 +1,15 @@
+(load "std.kf")
+(def env0 '())
+(def (bound env name val) '((,name ,val) ,env))
+(def (search env name) 
+    (cond
+        (empty? env) #n
+        (= (first (first env)) name) (second (first env))
+        else (search (second env) name))
+)
+(println (search (bound (bound '() 'x 1) 'x 2) 'x))
+(def (interp expr)
+    (match expr
+        
+    )
+)

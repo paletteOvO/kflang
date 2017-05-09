@@ -210,9 +210,9 @@ class Lazy():
     def __repr__(self):
         return f"<Lazy-Eval>"
 
-    def __call__(self, env: Env, name):
+    def __call__(self, env: Env, name=None):
         val, _ = interp.interp0(self.body, env, self.scope)
-        env.set(self.scope, name, val)
+        if name: env.set(self.scope, name, val)
         return val
     
     def __del__(self):

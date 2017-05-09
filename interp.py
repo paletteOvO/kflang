@@ -93,20 +93,19 @@ def preProcess(expr):
         buffer.append(char)
     R = Reader(expr)
     for char in R:
-        if FLAG == FLAG_COMMENT:
-            if char == "\n":
-                FLAG = FLAG_DEFAULT
-            continue
-        elif FLAG == FLAG_STRING:
-            if char == "\\":
-                FLAG = FLAG_ESCAPESTRING
-            elif char == "\"":
-                FLAG = FLAG_DEFAULT
-            addBuffer(char)
-            continue
-        elif FLAG == FLAG_ESCAPESTRING:
-            FLAG = FLAG_STRING
-            addBuffer(char)
+        if FLAG:
+            if FLAG == FLAG_COMMENT:
+                if char == "\n":
+                    FLAG = FLAG_DEFAULT
+            elif FLAG == FLAG_STRING:
+                if char == "\\":
+                    FLAG = FLAG_ESCAPESTRING
+                elif char == "\"":
+                    FLAG = FLAG_DEFAULT
+                addBuffer(char)
+            elif FLAG == FLAG_ESCAPESTRING:
+                FLAG = FLAG_STRING
+                addBuffer(char)
             continue
         if char in "([{":
             writeBuffer()

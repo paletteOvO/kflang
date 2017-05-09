@@ -178,15 +178,20 @@ def _match(args, env, scope):
     # (match x pattern expr ...) -> expr | (match x ...)
     x = interp0(args[0], env, scope)[0]
     pattern = args[1]
-    for pattern, expr in zip(args[1::2], args[2::2]):   
+    for pattern, expr in zip(args[1::2], args[2::2]):
+        if isinstance(pattern, list) and pattern[0] == "?":
+            # (? fun args...)
+            val = interp0(pattern[1:] + [Lazy(scope, x)], env, scope)
+            print(val)
+            if val[0]:
+                return interp0(expr, env, scope)[0], None
+            else:
+                continue
         b = patternMatch(pattern, x)
         if b is not False:
             env._update(scope, b)
-            gc = GC(env)
-            gc.add(scope, b.keys())
-            val, _gc = interp0(expr, env, scope)
-            gc.extend(_gc)
-            return val, gc
+            val, _ = interp0(expr, env, scope)
+            return val, None
     return None, None
 
 def patternMatch(pattern, lst):
@@ -196,6 +201,7 @@ def patternMatch(pattern, lst):
     l1 = len(pattern)
     l2 = len(lst)
     res = {}
+
     if pattern == "_":
         return {"_": lst}
     elif l1 != l2:
