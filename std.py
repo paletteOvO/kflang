@@ -178,9 +178,7 @@ def _match(args, env, scope):
     # (match x pattern expr ...) -> expr | (match x ...)
     x = interp0(args[0], env, scope)[0]
     pattern = args[1]
-    for pattern, expr in zip(args[1::2], args[2::2]):
-        if pattern == "_":
-            return interp0(expr, env, scope)
+    for pattern, expr in zip(args[1::2], args[2::2]):   
         b = patternMatch(pattern, x)
         if b is not False:
             env._update(scope, b)
@@ -197,9 +195,12 @@ def patternMatch(pattern, lst):
     # print(f"patternMatch({pattern}, {lst})")
     l1 = len(pattern)
     l2 = len(lst)
-    if l1 != l2:
-        return False
     res = {}
+    if pattern == "_":
+        return {"_": lst}
+    elif l1 != l2:
+        return False
+
     for i in range(0, l1):
         if isinstance(pattern[i], str):
             if pattern[i][0] == "?":
