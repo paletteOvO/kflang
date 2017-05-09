@@ -22,6 +22,10 @@ class Env():
 
     def _set(self, scope, name, val):
         self.env[(name, id(scope))] = val
+    
+    def _update(self, scope, valdict):
+        for name, val in valdict.items():
+            self.env[(name, id(scope))] = val
 
     def define(self, scope, name, val):
         # print(f"Define: {(name, scope)} -> {val}")

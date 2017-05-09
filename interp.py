@@ -2,7 +2,7 @@
 參照某天跟冰封提起的方法嘗試實現的一個解釋器
 """
 from env import GC, Env
-from type import (Quote, String, is_float, is_int, is_lazy, is_none, is_quote,
+from type import (Quote, String, PyFunc, is_float, is_int, is_lazy, is_none, is_quote,
                   is_string)
 from util import *
 
@@ -170,16 +170,16 @@ def interp0(expr, env, scope):
         return expr, None
     elif is_none(expr):
         return None, None
-    elif isinstance(expr, list) or  isinstance(expr, Quote):
+    elif isinstance(expr, list) or isinstance(expr, Quote):
         gc = GC(env)
         fun, _gc = interp0(expr[0], env, scope)
+        # print(f"interp {fun.name} at {scope}:")
         gc.extend(_gc)
         val, _gc = fun(expr[1:], env, (0, scope))
+        # print(f"{' ' * scopeDeep(scope)}{expr} -> {val} :: {type(val)}")
         gc.extend(_gc)
-        # print(f"interp {fun.name} {selfScope}:")
         # gc.printClosureGC()
         # print("="*10)
-        # print(f"{' ' * scopeDeep(scope)} -> {val} :: {type(val)}")
         # print(f"{' ' * scopeDeep(scope)}IGC {gc.val}, {gc.otherGC}")
         return val, gc
     elif is_lazy(expr):
@@ -195,9 +195,3 @@ def interp0(expr, env, scope):
 def interp(expr):
     val, _ = interp0(expr, Env(), None)
     return val
-
-def kfeval(x):
-    x = parse(x)
-    e = Env()
-    for i in range(0, len(x)):
-        interp0(x[i], e, i)

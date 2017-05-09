@@ -158,7 +158,11 @@ test_suite = ["(printf \"{}\" 1)", None,
               "(do (load \"std.kf\") (cond #f 1 else 2))", 2,
               "((do (def x 1) (fn () x)))", 1,
               "(eval (read \"(+ 1 2)\"))", 3,
-              "(do (do (def y (fn () x)) (def x (fn () y)) (y) (x)) #n)", None
+              "(do (do (def y (fn () x)) (def x (fn () y)) (y) (x)) #n)", None,
+              "(do (def x '(1 2 3)) (match x (1 ?x 3) x))", 2,
+              "(do (def x '(1 2 3)) (match x (1 ?x 2)))", None,
+              "(do (def x '(1 2 3)) (match x (1 ?x 2) x _ 3))", 3,
+              "(do (match '(1 2 3) (1 ?x 3) x))", 2,
              ]
 @Test
 def test_sameenv():

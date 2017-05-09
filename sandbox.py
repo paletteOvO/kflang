@@ -1,23 +1,31 @@
-def patternMatch(matching, lst):
-    # f((1 ?x 3), (1 2 3)), x => 2
-    # f((1 (1 ?x 3) 3), (1 (1 2 3) 3)) => (1 f((1 ?x 3), (1 2 3)) 3)
-    l1 = len(matching)
-    l2 = len(lst)
-    if l1 != l2:
-        return False
-    res = {}
-    for i in range(0, l1):
-        if isinstance(matching[i], str):
-            if matching[i][0] == "?":
-                res[matching[i][i:]] = lst[i]
-            elif matching[i] != lst[i]:
-                return False
-        elif isinstance(lst[i], list):
-            x = patternMatch(matching[i], lst[i])
-            if x:
-                res.update(x)
-            else:
-                return False
-        elif matching[i] != lst[i]:
-            return False
-    return res or True
+import env
+import std
+from env import GC
+from interp import interp, interp0, parse
+from type import Quote, String, PyFunc
+
+
+
+print(interp(parse("(do (def x '(1 2 3)) (match x (1 ?x 3) x))")[0]))
+
+"""
+n + n >= m, n >= m/2
+n * n >= m, n >= sqrt(m)
+n ^ n >= m, n > log_n m
+"""
+
+class Num():
+    def __init__(self, num, max):
+        self.num = num
+        self.max = max
+    
+    def __str__(self):
+        return f"<Num num:{self.num}, max:{self.max}>"
+# x, y :: (num, max)
+def add(x, y):
+    if x.max > y.max:
+        y.max = x.max
+    max = x.max
+    if x.num >= max/2 or y.num >= max/2:
+        max *= max
+    return Num(x.num + y.num, max)

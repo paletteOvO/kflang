@@ -74,6 +74,8 @@ class Quote():
         if not isinstance(self.val, list):
             raise TypeError("'Symbol'")
         self.val.append(x)
+    def is_symbol(self):
+        return not isinstance(self.val, list)
 
 
 class Patt(tuple): pass

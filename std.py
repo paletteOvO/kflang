@@ -172,6 +172,50 @@ def _load(args, env: Env, scope):
             gc.extend(_gc)
     return None, gc
 
+
+@PyFunc("match", fexpr=True)
+def _match(args, env, scope):
+    # (match x pattern expr ...) -> expr | (match x ...)
+    x = interp0(args[0], env, scope)[0]
+    pattern = args[1]
+    for pattern, expr in zip(args[1::2], args[2::2]):
+        if pattern == "_":
+            return interp0(expr, env, scope)
+        b = patternMatch(pattern, x)
+        if b is not False:
+            env._update(scope, b)
+            gc = GC(env)
+            gc.add(scope, b.keys())
+            val, _gc = interp0(expr, env, scope)
+            gc.extend(_gc)
+            return val, gc
+    return None, None
+
+def patternMatch(pattern, lst):
+    # f((1 ?x 3), (1 2 3)), x => 2
+    # f((1 (1 ?x 3) 3), (1 (1 2 3) 3)) => (1 f((1 ?x 3), (1 2 3)) 3)
+    # print(f"patternMatch({pattern}, {lst})")
+    l1 = len(pattern)
+    l2 = len(lst)
+    if l1 != l2:
+        return False
+    res = {}
+    for i in range(0, l1):
+        if isinstance(pattern[i], str):
+            if pattern[i][0] == "?":
+                res[pattern[i][i:]] = lst[i]
+            elif pattern[i] != lst[i]:
+                return False
+        elif isinstance(lst[i], Quote):
+            x = patternMatch(pattern[i], lst[i])
+            if x:
+                res.update(x)
+            else:
+                return False
+        elif pattern[i] != lst[i]:
+            return False
+    return res
+
 # Math
 @PyFunc("+")
 def _add(args, env, scope):
