@@ -1,0 +1,12 @@
+(load "std.kf")
+(def (calc expr)
+  (if (number? expr)
+      expr
+      (match expr
+        (+ ?x ?y) (+ (calc x) (calc y))
+        (- ?x ?y) (- (calc x) (calc y))
+        (* ?x ?y) (* (calc x) (calc y))
+        (/ ?x ?y) (/ (calc x) (calc y))
+      )
+))
+(println (calc '(+ (+ 1 2) 3)))

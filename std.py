@@ -203,7 +203,7 @@ def patternMatch(pattern, lst):
     for i in range(0, l1):
         if isinstance(pattern[i], str):
             if pattern[i][0] == "?":
-                res[pattern[i][i:]] = lst[i]
+                res[pattern[i][1:]] = lst[i]
             elif pattern[i] != lst[i]:
                 return False
         elif isinstance(lst[i], Quote):
@@ -457,3 +457,8 @@ def quote_interp(q, env, scope):
 @PyFunc("scope")
 def _scope(args, env, scope):
     return scope, None
+
+# Type
+@PyFunc("number?")
+def _numberq(args, env, scooe):
+    return isinstance(args[0], int) or isinstance(args[0], float), None
