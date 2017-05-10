@@ -117,9 +117,9 @@ class Func():
         assert len(args) >= self.args_len - 1
         self.runtime += 1
         if self.dynamic_scope:
-            exec_scope = (self.runtime, scope)
+            exec_scope = (f"{id(self)}-{self.runtime}", scope)
         else:
-            exec_scope = (self.runtime, self.closure)
+            exec_scope = (f"{id(self)}-{self.runtime}", self.closure)
         # (f x y ...) => (f 1 2) | (f 1 2 3 4)
         # (f ...) => (f) | (f 1 2)
         args_val = []
@@ -187,7 +187,7 @@ def PyFunc(name, fexpr=False):
                     val, _gc = interp.interp0(i, env, scope)
                     gc.extend(_gc)
                     args_val.append(val)
-                val, _gc = self.func(args_val, env, (0, scope))
+                val, _gc = self.func(args_val, env, scope)
                 gc.extend(_gc)
             # print(self.name, "end")
             return val, gc

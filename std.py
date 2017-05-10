@@ -47,6 +47,7 @@ def _do(args, env, scope):
 def _def(args, env, scope):
     # (def <name> <val>)
     # (def (<name> <args>) <body>) => (def <name> (lambda (<args>) <body>))
+    # print(f"define at {scope}")
     gc = GC(env)
     varlist = []
     if isinstance(args[0], list):
@@ -175,14 +176,15 @@ def _load(args, env: Env, scope):
 
 @PyFunc("match", fexpr=True)
 def _match(args, env, scope):
+    # print(f"(match {args})")
     # (match x pattern expr ...) -> expr | (match x ...)
     x = interp0(args[0], env, scope)[0]
     pattern = args[1]
     for pattern, expr in zip(args[1::2], args[2::2]):
+        # print(f"match {pattern} with {args[0]} -> {x} at {scope}")
         if isinstance(pattern, list) and pattern[0] == "?":
             # (? fun args...)
-            val = interp0(pattern[1:] + [Lazy(scope, x)], env, scope)
-            print(val)
+            val = interp0(pattern[1:] + [x], env, scope)
             if val[0]:
                 return interp0(expr, env, scope)[0], None
             else:
@@ -469,3 +471,7 @@ def _scope(args, env, scope):
 @PyFunc("number?")
 def _numberq(args, env, scooe):
     return isinstance(args[0], int) or isinstance(args[0], float), None
+
+@PyFunc("type")
+def _type(args, env, scooe):
+    return type(args[0]), None

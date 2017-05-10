@@ -161,6 +161,7 @@ def parse(expr):
 
 def interp0(expr, env, scope):
     # print(f"{' ' * scopeDeep(scope)} interp {expr} :: {type(expr)}")
+    assert not is_quote(expr)
     if isinstance(expr, int):
         return expr, None
     elif isinstance(expr, float):
@@ -169,12 +170,12 @@ def interp0(expr, env, scope):
         return expr, None
     elif is_none(expr):
         return None, None
-    elif isinstance(expr, list) or isinstance(expr, Quote):
+    elif isinstance(expr, list):
         gc = GC(env)
         fun, _gc = interp0(expr[0], env, scope)
         # print(f"interp {fun.name} at {scope}:")
         gc.extend(_gc)
-        val, _gc = fun(expr[1:], env, (0, scope))
+        val, _gc = fun(expr[1:], env, scope)
         # print(f"{' ' * scopeDeep(scope)}{expr} -> {val} :: {type(val)}")
         gc.extend(_gc)
         # gc.printClosureGC()
@@ -192,5 +193,5 @@ def interp0(expr, env, scope):
             return val, None
 
 def interp(expr):
-    val, _ = interp0(expr, Env(), None)
+    val, _ = interp0(expr, Env(), (0, None))
     return val

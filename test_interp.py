@@ -171,8 +171,11 @@ def test_sameenv():
     """
     env0 = env.Env()
     gc = env.GC(env0)
+    k = -1
     def _fun(e, y):
-        val, _gc = interp0(parse(y)[0], e, None)
+        nonlocal k
+        k += 1
+        val, _gc = interp0(parse(y)[0], e, (k, None))
         gc.extend(_gc)
         return val
     unittest(lambda: env0, _fun, test_suite)
@@ -193,8 +196,11 @@ def test_do_env():
     """
     env0 = env.Env()
     gc = env.GC(env0)
+    k = -1
     def _fun(e, y):
-        val, _gc = interp0(parse(f"(do {y})")[0], e, None)
+        nonlocal k
+        k += 1
+        val, _gc = interp0(parse(f"(do {y})")[0], e, (k, None))
         gc.extend(_gc)
         return val
     unittest(lambda: env0, _fun, test_suite + \

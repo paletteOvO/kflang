@@ -7,29 +7,31 @@ class Env():
         init_env(self, self.buintin_func)
 
     def get(self, scope, name):
+        # print(f"get {name} from {scope}")
         while scope is not None and\
-              (name, id(scope)) not in self.env:
+              (name, hash(scope)) not in self.env:
             scope = scope[1]
-        return self.env[(name, id(scope))]
+        return self.env[(name, hash(scope))]
 
     def set(self, scope, name, val):
-        while scope is not None and (name, id(scope)) not in self.env:
+        while scope is not None and (name, hash(scope)) not in self.env:
             scope = scope[1]
-        if (name, id(scope)) in self.env:
-            self.env[(name, id(scope))] = val
+        if (name, hash(scope)) in self.env:
+            self.env[(name, hash(scope))] = val
         else:
             raise KeyError
 
     def _set(self, scope, name, val):
-        self.env[(name, id(scope))] = val
+        self.env[(name, hash(scope))] = val
     
     def _update(self, scope, valdict):
         for name, val in valdict.items():
-            self.env[(name, id(scope))] = val
+            # print(f"Define: {(name, scope)} -> {val}")
+            self.env[(name, hash(scope))] = val
 
     def define(self, scope, name, val):
         # print(f"Define: {(name, scope)} -> {val}")
-        var = (name, id(scope))
+        var = (name, hash(scope))
         if var in self.env:
             raise KeyError(f"({name}, {scope}) already defined")
         else:
@@ -77,8 +79,7 @@ class GC():
             scope, varlist = i
             for var in varlist:
                 # print(f"del {(var, scope)}")
-                del self.env[(var, id(scope))]
-                pass
+                del self.env[(var, hash(scope))]
         for i in self.otherGC:
             i.clean()
         self.val = []

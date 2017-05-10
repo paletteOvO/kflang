@@ -1,5 +1,4 @@
 (load "std.kf")
-(def env0 '())
 (def (bound env name val) '((,name ,val) ,env))
 (def (search env name) 
     (cond
@@ -7,9 +6,16 @@
         (= (first (first env)) name) (second (first env))
         else (search (second env) name))
 )
-(println (search (bound (bound '() 'x 1) 'x 2) 'x))
-(def (interp expr)
+(def (interp0 expr env)
     (match expr
-        
+        (? number?) expr
+        (+ ?e1 ?e2) (+ (interp0 e1 env) (interp0 e2 env))
+        (- ?e1 ?e2) (- (interp0 e1 env) (interp0 e2 env))
+        (* ?e1 ?e2) (* (interp0 e1 env) (interp0 e2 env))
+        (/ ?e1 ?e2) (/ (interp0 e1 env) (interp0 e2 env))
+        (fn ?args ?body) (fn (v) (interp0 body (bound env args v)))
+        (?fn ?args) (fn args)
+        _ #f
     )
 )
+(println (interp0 '((fn x x) 1) '()))
