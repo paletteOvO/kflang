@@ -52,5 +52,6 @@ def unittest(setup, fun, data):
             total_time += timing
             passed += 1
         else:
-            print(f"Test{count} Failed, Expected '{expected_output}' but got '{res}'")
+            print(f"Test{count} Failed in {timing:.2f}ms, Expected '{expected_output}' but got '{res}'")
+            total_time += timing
     print(f"Passed: {passed}/{int(len(data)/2)}, {int(passed/len(data)*2*100)}% in {total_time:.2f}ms")
