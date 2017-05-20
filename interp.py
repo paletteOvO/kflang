@@ -72,7 +72,7 @@ class Reader():
         if self.i < 0:
             self.i = 0
 
-prefix = {"'": "quote", ",": "unquote", "#": "hashtag"}
+prefix = {"'": "quote", ",": "unquote"}
 def preProcess(expr):
     res = []
     FLAG = 0
