@@ -72,6 +72,7 @@ class Reader():
         if self.i < 0:
             self.i = 0
 
+prefix = {"'": "quote", ",": "unquote", "#": "hashtag"}
 def preProcess(expr):
     res = []
     FLAG = 0
@@ -82,7 +83,6 @@ def preProcess(expr):
     BUCKETFLAG = []
     BUCKETFLAG_NORMAL = 0
     BUCKETFLAG_QUOTE = 1
-    BUCKETFLAG_UNQUOTE = 2
     buffer = []
     def writeBuffer():
         nonlocal buffer
@@ -127,11 +127,8 @@ def preProcess(expr):
             addBuffer(char)
         elif char == ";":
             FLAG = FLAG_COMMENT
-        elif char == "'":
-            res.extend(["(", "quote"])
-            BUCKETFLAG.append(BUCKETFLAG_QUOTE)
-        elif char == ",":
-            res.extend(["(", "unquote"])
+        elif char in prefix:
+            res.extend(["(", prefix[char]])
             BUCKETFLAG.append(BUCKETFLAG_QUOTE)
         else:
             addBuffer(char)
