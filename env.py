@@ -14,12 +14,14 @@ class Env():
         return self.env[(name, scope)]
 
     def set(self, scope, name, val):
+        o = scope
         while scope is not None and (name, scope) not in self.env:
             scope = scope[1]
         if (name, scope) in self.env:
             self.env[(name, scope)] = val
         else:
-            raise KeyError
+            print(self.env)
+            raise KeyError((name, o))
 
     def _set(self, scope, name, val):
         self.env[(name, scope)] = val

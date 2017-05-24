@@ -7,7 +7,6 @@ from type import (Func, Lazy, PyFunc, Quote, String, is_float, is_func, is_int,
                   is_none, is_quote, is_string, is_lazy)
 from util import *
 
-
 # Lang
 @PyFunc("do", fexpr=True)
 def _do(args, env, scope):
@@ -180,18 +179,19 @@ def _load(args, env: Env, scope):
 def _match(args, env, scope):
     # print(f"(match {args})")
     # (match x pattern expr ...) -> expr | (match x ...)
-    x = interp0(args[0], env, scope)[0]
+    env._set(args[0], Lazy(args[0], scope[1]), scope)
     pattern = args[1]
     for pattern, expr in zip(args[1::2], args[2::2]):
-        # print(f"match {pattern} with {args[0]} -> {x} at {scope}")
+        # print(f"match {pattern} with {args[0]} at {scope}")
         if isinstance(pattern, list) and pattern[0] == "?":
             # (? fun args...)
-            val = interp0(pattern[1:] + [x], env, scope)
-            if val[0]:
+            # print(pattern[1:] + [args[0]])
+            val = interp0(pattern[1:] + [args[0]], env, scope)[0]
+            if val:
                 return interp0(expr, env, scope)[0], None
             else:
                 continue
-        b = patternMatch(pattern, x)
+        b = patternMatch(pattern, interp0(args[0], env, scope)[0])
         if b is not False:
             env._update(scope, b)
             val, _ = interp0(expr, env, scope)
@@ -212,8 +212,10 @@ def patternMatch(pattern, lst):
         return False
 
     for i in range(0, l1):
+        # print(f"  :: {pattern[i]} & {lst[i]}")
         if isinstance(pattern[i], str):
             if pattern[i][0] == "?":
+                # print(f"? -> {lst[i]}")
                 res[pattern[i][1:]] = lst[i]
             elif pattern[i] != lst[i]:
                 return False
@@ -473,6 +475,18 @@ def _scope(args, env, scope):
 @PyFunc("number?")
 def _numberq(args, env, scooe):
     return isinstance(args[0], int) or isinstance(args[0], float), None
+
+@PyFunc("list?")
+def _listq(args, env, scooe):
+    return isinstance(args[0], list), None
+
+@PyFunc("str?")
+def _listq(args, env, scooe):
+    return isinstance(args[0], str), None
+
+@PyFunc("symbol?")
+def _listq(args, env, scooe):
+    return isinstance(args[0], Quote) and args[0].is_symbol(), None
 
 @PyFunc("type")
 def _type(args, env, scooe):
