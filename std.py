@@ -168,8 +168,10 @@ def _load(args, env: Env, scope):
     # (load <fileName))
     gc = GC(env)
     with open(args[0], "r", encoding="utf8") as f:
+        k = 0
         for i in parse(f.read()):
-            val, _gc = interp0(i, env, scope[1][1])
+            k += 1
+            val, _gc = interp0(i, env, (k, scope[1]))
             gc.extend(_gc)
     return None, gc
 

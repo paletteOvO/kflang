@@ -77,9 +77,6 @@ class Quote():
     def is_symbol(self):
         return not isinstance(self.val, list)
 
-
-class Patt(tuple): pass
-
 class Func():
     def __init__(self, args, body, scope, name="lambda"):
         # (lambda (<args>) <body>)
