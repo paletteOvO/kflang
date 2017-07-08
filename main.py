@@ -16,7 +16,7 @@ if __name__ == '__main__':
         with open(file, "r", encoding="utf-8") as f:
             for i in interp.parse(f.read()):
                 k += 1
-                _, _gc = interp.interp0(i, env0, (k, None))
+                _, _, _gc = interp.interp0(i, env0, (k, None))
                 gc.extend(_gc)
     else:
         type.PyFunc("clear")(lambda _, __, ___: (os.system("cls"), None))
@@ -29,7 +29,7 @@ if __name__ == '__main__':
                 r = input(">> ")
                 for i in interp.parse(r):
                     k += 1
-                    val, _gc = interp.interp0(i, env0, (k, None))
+                    val, _, _gc = interp.interp0(i, env0, (k, None))
                     gc.extend(_gc)
                     env0._set(None, "it", val)
                     print(val)

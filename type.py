@@ -125,7 +125,7 @@ class Func():
             if self.args_fexpr[i]:
                 val = args[i]
             else:
-                val, _ = interp.interp0(args[i], env, (i, scope))
+                val, _, _ = interp.interp0(args[i], env, (i, scope))
             env.define(exec_scope, # scope
                        name, # var name
                        val) # value
@@ -147,12 +147,12 @@ class Func():
                            "...", # var name
                            Quote(varargs_val)) # value
             gc.add(exec_scope, ["..."])
-        val, _ = interp.interp0(self.body, env, exec_scope)
+        val, _, _ = interp.interp0(self.body, env, exec_scope)
         if isinstance(val, Func):
             val.closureGC[1].append(gc)
             val.closureGC[1].extend(self.closureGC[1])
             self.closureGC[0] += 1
-        return val, None
+        return Ret(val)
     def __str__(self):
         return f"<Func {self.name}>"
     def __repr__(self):
@@ -176,18 +176,18 @@ def PyFunc(name, fexpr=False):
         def __call__(self, args, env, scope):
             # print(self.name, "start")
             if fexpr:
-                val, gc = self.func(args, env, scope)
+                val, _, gc = self.func(args, env, scope)
             else:
                 args_val = []
                 gc = GC(env)
                 for i in args:
-                    val, _gc = interp.interp0(i, env, scope)
+                    val, _, _gc = interp.interp0(i, env, scope)
                     gc.extend(_gc)
                     args_val.append(val)
-                val, _gc = self.func(args_val, env, scope)
+                val, _, _gc = self.func(args_val, env, scope)
                 gc.extend(_gc)
             # print(self.name, "end")
-            return val, gc
+            return Ret(val, gc=gc)
 
         def __str__(self):
             return f"<Builtin-Func {self.name}>"
@@ -199,17 +199,18 @@ def PyFunc(name, fexpr=False):
     return lambda func: PyFunc(name, func)
 
 class Lazy():
-    def __init__(self, scope, body):
+    def __init__(self, env, scope, body):
         self.scope = scope
         self.body = body
+        self.env = env
         self.closureGC: List = [1, [None]]
 
     def __repr__(self):
         return f"<Lazy-Eval>"
 
-    def __call__(self, env: Env, name=None):
-        val, _ = interp.interp0(self.body, env, self.scope)
-        if name: env.set(self.scope, name, val)
+    def __call__(self, name=None):
+        val, _, _ = interp.interp0(self.body, self.env, self.scope)
+        if name: self.env.set(self.scope, name, val)
         return val
     
     def __del__(self):
@@ -220,3 +221,13 @@ class Lazy():
                 if i:
                     i.clean()
 class Empty(): pass
+
+class Ret():
+    def __init__(self, value, error=None, gc=None):
+        self.value = value
+        self.error = error
+        self.gc = gc
+        self.index = (value, error, gc)
+
+    def __getitem__(self, index):
+        return self.index[index]

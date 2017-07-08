@@ -175,7 +175,7 @@ def test_sameenv():
     def _fun(e, y):
         nonlocal k
         k += 1
-        val, _gc = interp0(parse(y)[0], e, (k, None))
+        val, err, _gc = interp0(parse(y)[0], e, (k, None))
         gc.extend(_gc)
         return val
     unittest(lambda: env0, _fun, test_suite)
@@ -200,7 +200,7 @@ def test_do_env():
     def _fun(e, y):
         nonlocal k
         k += 1
-        val, _gc = interp0(parse(f"(do {y})")[0], e, (k, None))
+        val, err, _gc = interp0(parse(f"(do {y})")[0], e, (k, None))
         gc.extend(_gc)
         return val
     unittest(lambda: env0, _fun, test_suite + \

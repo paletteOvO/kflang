@@ -3,7 +3,7 @@
 """
 from env import GC, Env
 from type import (Quote, String, PyFunc, is_float, is_int, is_lazy, is_none, is_quote,
-                  is_string)
+                  is_string, Ret)
 from util import *
 
 
@@ -160,35 +160,37 @@ def interp0(expr, env, scope):
     # print(f"{' ' * scopeDeep(scope)} interp {expr} :: {type(expr)}")
     assert not is_quote(expr)
     if isinstance(expr, int):
-        return expr, None
+        return Ret(expr)
     elif isinstance(expr, float):
-        return expr, None
+        return Ret(expr)
     elif type(expr) is String:
-        return expr, None
+        return Ret(expr)
     elif is_none(expr):
-        return None, None
+        return Ret(expr)
     elif isinstance(expr, list):
         gc = GC(env)
-        fun, _gc = interp0(expr[0], env, scope)
-        # print(f"interp {fun.name} at {scope}:")
+        fun, err, _gc = interp0(expr[0], env, scope)
         gc.extend(_gc)
-        val, _gc = fun(expr[1:], env, scope)
+        if err:
+            return Ret(fun, err, gc)
+        # print(f"interp {fun.name} at {scope}:")
+        val, err, _gc = fun(expr[1:], env, scope)
         # print(f"{' ' * scopeDeep(scope)}{expr} -> {val} :: {type(val)}")
         gc.extend(_gc)
+        return Ret(val, err, gc)
         # gc.printClosureGC()
         # print("="*10)
         # print(f"{' ' * scopeDeep(scope)}IGC {gc.val}, {gc.otherGC}")
-        return val, gc
     elif is_lazy(expr):
-        return expr(env), None
+        return Ret(expr())
     else:
         val = env.get(scope, expr)
         # print("val", val)
         if is_lazy(val):
-            return val(env, expr), None
+            return Ret(val(expr))
         else:
-            return val, None
+            return Ret(val)
 
 def interp(expr):
-    val, _ = interp0(expr, Env(), (0, None))
+    val, _, _ = interp0(expr, Env(), (0, None))
     return val
