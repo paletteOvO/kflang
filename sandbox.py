@@ -126,14 +126,14 @@ def interp(lst):
     return stack.pop()
 
 def exe(lst, stack):
-    expr = [stack.pop() if i is None else i for i in lst]
+    expr = list(reversed([stack.pop() if i is None else i for i in reversed(lst)]))
     ret = to_value(expr[0])(expr[1:])
     return ret
 
 env = [None] * 100
 env[assign_id(tuple(), "+")] = lambda args: reduce(lambda x, y: to_value(x) + to_value(y), args)
 env[assign_id(tuple(), "def")] = lambda args: set_value(args[0], to_value(args[1]) if type(args[1]) == ID else args[1])
-env[assign_id(tuple(), "do")] = lambda args: args[0]
+env[assign_id(tuple(), "do")] = lambda args: args[-1]
 
 print(expr)
 k = parse(expr)[0]
