@@ -88,7 +88,10 @@ class Compile():
             elif isstr(lst[0]) and env.get(s, lst[0]) == env.get(tuple(), "def"):
                 # (def {sym} {sym|expr})
                 # atom_2 :: {sym|None}
-                env.assign(s, lst[1])
+                if isstr(lst[2]):
+                    env.set(s, lst[1], env.get(tuple(), "def"))
+                else:
+                    env.assign(s, lst[1])
             expr_list = []
             ret = []
             for expr in lst:
@@ -114,7 +117,7 @@ class Interp():
             pass
 
 def main():
-    string = "(do (def x (do (def x 0) x)) x)"
+    string = "(do (def define def) (define x 1) x)"
     expr = Compile().parse(string)
     pass
 
