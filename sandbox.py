@@ -1,150 +1,123 @@
 from functools import *
-import env
-import std
-from env import GC
 from interp import parse
-from type import Quote, String, PyFunc
+isint = lambda x: type(x) is int
+isfloat = lambda x: type(x) is float
+islist = lambda x: type(x) is list
+isstr = lambda x: type(x) is str
+issymbol = lambda x: isint(x) or isfloat(x) or isstr(x)
+hr = lambda: print("*" * 16)
 
-expr = """
-(do
-    (def x 2)
-    (+
-        (do
-            (def x 1)
-            (+ x 4)
-        )
-        x
-    )
-)
+class Ref(int):
+    def __str__(self):
+        return f"<Ref {int(self)}>"
+    __repr__ = __str__
 
-"""
-k = []
-def islist(l):
-    return type(l) is list
+class Env():
+    def __init__(self, size):
+        self.env = [None] * size
 
+class Scope():
+    def __init__(self, init=tuple()):
+        self.scope = init
+        self.scope_id = 0
 
-def is_int(s):
-    if isinstance(s, int):
-        return True
-    try:
-        int(s)
-        return True
-    except ValueError:
-        return False
+    def next(self):
+        self.scope = self.scope, self.scope_id
+        self.scope_id += 1
+        return self.scope
 
-def is_float(s):
-    if isinstance(s, float):
-        return True
-    try:
-        float(s)
-        return True
-    except ValueError:
-        return False
+    def __getitem__(self, n):
+        return self.scope[n]
+    
+    def back(self):
+        self.scope = self.scope[1]
+        return self.scope
 
-def is_none(s):
-    return s is None
-
-def is_symbol(expr):
-    return not (is_none(expr) or is_float(expr) or is_int(expr))
-###
-class ID(int):
-    def __repr__(self):
-        return f"<ID {int(self)}>"
-    __str__ = __repr__
-
-env_map = {}
-env_map_count = 0
-def assign_id(scope, varname):
-    global env_map_count
-    env_map[(scope, varname)] = env_map_count
-    env_map_count += 1
-    return env_map[(scope, varname)]
-
-def get_id(scope, varname):
-    _scope = scope
-    while scope and (scope, varname) not in env_map:
-        scope = scope[1]
-    if (scope, varname) not in env_map:
-        print("NOT FOUND", _scope, varname)
-    return env_map[(scope, varname)]
-
-def set_value(id, value):
-    env[id] = value
-
-def get_value(id):
-    return env[id]
-
-def to_value(val):
-    if type(val) == ID:
-        return get_value(val)
-    else:
-        return val
-###
-
-def parse1(lst):
-    ret = []
-    n = 0
-    scope = tuple()
-    def f(lst):
-        nonlocal scope, n
+class CompileEnv():
+    def __init__(self):
+        self.env = {}
+        self.env_counting = 0
+    
+    def assign(self, scope, varname):
+        try:
+            self.env[(scope, varname)] = self.env_counting
+            return self.env_counting
+        finally:
+            self.env_counting += 1
+    
+    def set(self, scope, varname, id):
+        self.env[(scope, varname)] = id
+        return id
+    
+    def get(self, scope, varname):
         _scope = scope
-        n += 1
-        scope = (n, scope)
-        if all(map(lambda x: not islist(x), lst)):
-            ret.append((_scope, lst))
+        try:
+            while (scope, varname) not in self.env:
+                scope = scope[0]
+            return self.env[(scope, varname)]
+        except IndexError as e:
+            raise KeyError(f"{varname} in {_scope} not found") from e
+
+class Compile():
+    def parse(self, string):
+        p = parse(string) # str to tree
+        print(p)
+        hr()
+        p = self.parse1(p) # tree to list and refer var
+        print("\n".join(map(str, p)))
+        hr()
+        return p
+
+    def parse1(self, lst_of_expr):
+        ret = []
+        for i in lst_of_expr:
+            ret.extend(self._parse1(i))
+        return ret
+    
+    def _parse1(self, lst):
+        scope = Scope()
+        env = CompileEnv()
+        env.assign(tuple(), "def")
+        env.assign(tuple(), "do")
+        env.assign(tuple(), "+")
+        def f(lst):
+            s = scope.scope
+            if isstr(lst[0]) and env.get(s, lst[0]) == env.get(tuple(), "do"):
+                # (do {sym|expr} ...)
+                s = scope.next()
+            elif isstr(lst[0]) and env.get(s, lst[0]) == env.get(tuple(), "def"):
+                # (def {sym} {sym|expr})
+                # atom_2 :: {sym|None}
+                env.assign(s, lst[1])
+            expr_list = []
+            ret = []
+            for expr in lst:
+                if islist(expr):
+                    ret.append(None)
+                    expr_list += f(expr)
+                elif isstr(expr):
+                    ret.append(Ref(env.get(s, expr)))
+                else:
+                    ret.append(expr)
+            return expr_list + [ret]
+        return f(lst)
+
+class Interp():
+    def __init__(self):
+        pass
+    
+    def eval(self, expr):
+        # expr = {atom | list}
+        if islist(expr):
+            pass
         else:
-            ret.append((_scope, [f(i) if islist(i) else i for i in lst]))
-        scope = _scope
-    f(lst)
-    return ret
+            pass
+
+def main():
+    string = "(do (def x (do (def x 0) x)) x)"
+    expr = Compile().parse(string)
+    pass
 
 
-def parse2(lst):
-    ret = []
-    for scope, expr in lst:
-        r = []
-        for i in expr:
-            if i == "def": # TODO: temporary implement def
-                r.append(ID(get_id(scope, i)))
-                r.append(ID(assign_id(scope, expr[1])))
-                r.append(ID(assign_id(scope, expr[2])) \
-                         if is_symbol(expr[2]) \
-                         else expr[2])
-                break
-            elif is_symbol(i):
-                r.append(ID(get_id(scope, i)))
-            else:
-                r.append(i)
-        ret.append(r)
-    return ret
-
-
-def interp(lst):
-    stack = []
-    for i in lst:
-        stack.append(exe(i, stack))
-    return stack.pop()
-
-def exe(lst, stack):
-    expr = list(reversed([stack.pop() if i is None else i for i in reversed(lst)]))
-    ret = to_value(expr[0])(expr[1:])
-    return ret
-
-env = [None] * 100
-env[assign_id(tuple(), "+")] = lambda args: reduce(lambda x, y: to_value(x) + to_value(y), args)
-env[assign_id(tuple(), "def")] = lambda args: set_value(args[0], to_value(args[1]) if type(args[1]) == ID else args[1])
-env[assign_id(tuple(), "do")] = lambda args: args[-1]
-
-print(expr)
-k = parse(expr)[0]
-print(k)
-print("="*10)
-k = parse1(k)
-print("\n".join(map(str, k)))
-print("="*10)
-k = parse2(k)
-print("\n".join(map(str, k)))
-print("="*10)
-k = interp(k)
-print(k)
-
+if __name__ == "__main__":
+    main()
