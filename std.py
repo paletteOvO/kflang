@@ -1,7 +1,7 @@
 from functools import reduce
 from typing import List, Tuple
 
-from env import GC, Env
+from env import GC, Env, Scope
 from interp import interp0, parse
 from type import (Func, Lazy, PyFunc, Quote, String, is_float, is_func, is_int,
                   is_none, is_quote, is_string, is_lazy, Ret)
@@ -9,7 +9,8 @@ from util import *
 
 # Lang
 @PyFunc("do", fexpr=True)
-def _do(args, env, scope):
+def _do(args, env, scope: Scope):
+    assert type(scope) is Scope
     # GC: [(scope varlist) ...]
     # (do ...)
     # print(f"{' ' * scopeDeep(scope)} do {args}")
@@ -22,7 +23,7 @@ def _do(args, env, scope):
             fun, _, _gc = interp0(i[0], env, scope)
             # print(f"{' ' * scopeDeep(scope)}_GC {gc.val}, {gc.otherGC}")
             gc.extend(_gc)
-            res, _, _gc = fun(i[1:], env, (s, scope))
+            res, _, _gc = fun(i[1:], env, scope.extend())
             if fun.name == "set" and (is_func(res) or is_lazy(res)):
                 # print(fun.name)
                 setFunc.append(res)
@@ -114,7 +115,8 @@ def _let(args, env, scope):
     return Ret(val)
 
 @PyFunc("while", fexpr=True)
-def _while(args: List, env: Env, scope: Tuple):
+def _while(args: List, env: Env, scope: Scope):
+    assert type(scope) is Scope
     # (while <bool> <body>)
     val, _, _gc = interp0(args[0], env, scope)
     env.clean(_gc)
@@ -159,10 +161,9 @@ def _load(args, env: Env, scope):
     # (load <fileName))
     gc = GC(env)
     with open(args[0], "r", encoding="utf8") as f:
-        k = 0
+        s = scope[1]
         for i in parse(f.read()):
-            k += 1
-            val, _, _gc = interp0(i, env, (k, scope[1]))
+            val, _, _gc = interp0(i, env, s.extend())
             gc.extend(_gc)
     return Ret(None, gc=gc)
 

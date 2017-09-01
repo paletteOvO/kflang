@@ -1,4 +1,26 @@
 from util import *
+
+class Scope(tuple):
+    __static_id = [1]
+    __static_root_scope = [None]
+    def __hash__(self):
+        return self[0]
+
+    def extend(self, id=None):
+        if not id:
+            id = self.__static_id[0]
+            self.__static_id[0] += 1
+        return Scope((id, self))
+
+    @staticmethod
+    def root_scope():
+        if Scope.__static_root_scope[0]:
+            return Scope.__static_root_scope[0]
+        else:
+            Scope.__static_root_scope[0] = Scope((0, None))
+            return Scope.__static_root_scope[0]
+
+
 class Env():
     buintin_func = []
     counter = 0

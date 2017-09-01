@@ -12,24 +12,22 @@ if __name__ == '__main__':
         file = sys.argv[1]
         env0 = env.Env()
         gc = env.GC(env0)
-        k = -1
+        s = env.Scope.root_scope()
         with open(file, "r", encoding="utf-8") as f:
             for i in interp.parse(f.read()):
-                k += 1
-                _, _, _gc = interp.interp0(i, env0, (k, None))
+                _, _, _gc = interp.interp0(i, env0, s.extend())
                 gc.extend(_gc)
     else:
         type.PyFunc("clear")(lambda _, __, ___: (os.system("cls"), None))
         env0 = env.Env()
         gc = env.GC(env0)
         print("REPL")
-        k = -1
+        s = env.Scope.root_scope()
         while True:
             try:
                 r = input(">> ")
                 for i in interp.parse(r):
-                    k += 1
-                    val, _, _gc = interp.interp0(i, env0, (k, None))
+                    val, _, _gc = interp.interp0(i, env0, s.extend())
                     gc.extend(_gc)
                     env0._set(None, "it", val)
                     print(val)

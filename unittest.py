@@ -22,9 +22,14 @@ def starttest():
 def time(fun, *arr):
     import timeit
     s = timeit.default_timer()
-    res = fun(*arr)
+    err = None
+    res = None
+    try:
+        res = fun(*arr)
+    except Exception as _e:
+        err = _e
     e = timeit.default_timer()
-    return res, ((e - s) * 1000)
+    return res, err, ((e - s) * 1000)
 
 def unittest(setup, fun, data):
     """UnitTest"""
@@ -34,17 +39,17 @@ def unittest(setup, fun, data):
     count = 0
     for fun_inp, expected_output in zip(data[::2], data[1::2]):
         count += 1
-        try:
-            res, timing = time(fun, s, fun_inp)
-        except Exception as e:
+        res, err, timing = time(fun, s, fun_inp)
+        if err:
             if isinstance(expected_output, type) and\
-               isinstance(e, expected_output):
+                isinstance(err, expected_output):
                 print(f"Test{count} Passed in {timing:.2f}ms")
                 total_time += timing
                 passed += 1
             else:
                 print(f"Exception at Test{count}:")
-                traceback.print_exc()
+                traceback.print_tb(err.__traceback__)
+                print(str(err))
             continue
         if (isinstance(expected_output, TestFunc) and expected_output(res)) or\
            res == expected_output:

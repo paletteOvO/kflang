@@ -1,7 +1,7 @@
 """
 參照某天跟冰封提起的方法嘗試實現的一個解釋器
 """
-from env import GC, Env
+from env import GC, Env, Scope
 from type import (Quote, String, PyFunc, is_float, is_int, is_lazy, is_none, is_quote,
                   is_string, Ret)
 from util import *
@@ -159,6 +159,7 @@ def parse(expr):
 def interp0(expr, env, scope):
     # print(f"{' ' * scopeDeep(scope)} interp {expr} :: {type(expr)}")
     assert not is_quote(expr)
+    assert type(scope) is Scope
     if isinstance(expr, int):
         return Ret(expr)
     elif isinstance(expr, float):
@@ -192,5 +193,6 @@ def interp0(expr, env, scope):
             return Ret(val)
 
 def interp(expr):
-    val, _, _ = interp0(expr, Env(), (0, None))
+    val, _, _ = interp0(expr, Env(), Scope.root_scope().extend())
     return val
+

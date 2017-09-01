@@ -17,21 +17,23 @@ class Env():
         self.env = [None] * size
 
 class Scope():
-    def __init__(self, init=tuple()):
+    __scope_counter = [0]
+    def __init__(self, init=(None, 0)):
         self.scope = init
-        self.scope_id = 0
+        self.scope_id = self.__scope_counter[0]
 
     def next(self):
-        self.scope = self.scope, self.scope_id
-        self.scope_id += 1
-        return self.scope
+        self.__scope_counter[0] += 1
+        return Scope((self, self.__scope_counter[0]))
 
     def __getitem__(self, n):
         return self.scope[n]
     
     def back(self):
-        self.scope = self.scope[1]
-        return self.scope
+        return self.scope[0]
+
+    def __repr__(self):
+        return self.scope[0].__repr__() + " -> " + str(self.scope[1])
 
 class CompileEnv():
     def __init__(self):
@@ -61,11 +63,7 @@ class CompileEnv():
 class Compile():
     def parse(self, string):
         p = parse(string) # str to tree
-        print(p)
-        hr()
-        p = self.parse1(p) # tree to list and refer var
-        print("\n".join(map(str, p)))
-        hr()
+        p = self.parse1(p) # tree to list
         return p
 
     def parse1(self, lst_of_expr):
@@ -75,35 +73,20 @@ class Compile():
         return ret
     
     def _parse1(self, lst):
-        scope = Scope()
         env = CompileEnv()
-        env.assign(tuple(), "def")
-        env.assign(tuple(), "do")
-        env.assign(tuple(), "+")
-        def f(lst):
-            s = scope.scope
-            if isstr(lst[0]) and env.get(s, lst[0]) == env.get(tuple(), "do"):
-                # (do {sym|expr} ...)
-                s = scope.next()
-            elif isstr(lst[0]) and env.get(s, lst[0]) == env.get(tuple(), "def"):
-                # (def {sym} {sym|expr})
-                # atom_2 :: {sym|None}
-                if isstr(lst[2]):
-                    env.set(s, lst[1], env.get(tuple(), "def"))
-                else:
-                    env.assign(s, lst[1])
+        def f(lst, s):
             expr_list = []
             ret = []
             for expr in lst:
                 if islist(expr):
                     ret.append(None)
-                    expr_list += f(expr)
+                    expr_list += f(expr, s.next())
                 elif isstr(expr):
-                    ret.append(Ref(env.get(s, expr)))
+                    ret.append((s, expr))
                 else:
                     ret.append(expr)
             return expr_list + [ret]
-        return f(lst)
+        return f(lst, Scope())
 
 class Interp():
     def __init__(self):
@@ -117,8 +100,10 @@ class Interp():
             pass
 
 def main():
-    string = "(do (def define def) (define x 1) x)"
+    string = "(+ (+ (+ (+ 1 1) (+ 1 1)) (+ (+ 1 1) (+ 1 1))) (+ (+ (+ 1 1) (+ 1 1)) (+ (+ 1 1) (+ 1 1))))"
     expr = Compile().parse(string)
+    for i in expr:
+        print(i)
     pass
 
 

@@ -2,7 +2,7 @@ from typing import List
 
 import env
 import interp
-from env import GC, Env
+from env import GC, Env, Scope
 
 
 def is_int(s):
@@ -81,51 +81,27 @@ class Func():
     def __init__(self, args, body, scope, name="lambda"):
         # (lambda (<args>) <body>)
         self.name = name
-        if name[0] == "$":
-            self.dynamic_scope = True
-        else:
-            self.dynamic_scope = False
         self.args_name = []
-        self.args_fexpr = []
         self.args_len = len(args)
-        self.varargs = False
-        self.varargs_fexpr = False
         for name in args:
-            if name[0] == "$":
-                self.args_name.append(name[1:])
-                self.args_fexpr.append(True)
-            else:
-                self.args_name.append(name)
-                self.args_fexpr.append(False)
-        if len(self.args_name) > 0 and self.args_name[-1] == "...":
-            self.args_len -= 1
-            self.args_name.pop()
-            self.varargs = True
-            self.varargs_fexpr = self.args_fexpr.pop()
+            self.args_name.append(name)
         # [(f False) (x True) (y True) (... True)]
         # args_len = 2
         self.body = body
         self.closure = scope
         self.closureGC: List = [1, [None]]
-        self.runtime = 0
 
-    def __call__(self, args, env, scope):
+    def __call__(self, args, env, scope: Scope):
         # ((lambda (...) ...) 1)
+        assert type(scope) is Scope
         assert len(args) >= self.args_len - 1
-        self.runtime += 1
-        if self.dynamic_scope:
-            exec_scope = (f"{id(self)}-{self.runtime}", scope)
-        else:
-            exec_scope = (f"{id(self)}-{self.runtime}", self.closure)
+        exec_scope = self.closure.extend()
         # (f x y ...) => (f 1 2) | (f 1 2 3 4)
         # (f ...) => (f) | (f 1 2)
         args_val = []
         gc = GC(env)
         for i, name in enumerate(self.args_name):
-            if self.args_fexpr[i]:
-                val = args[i]
-            else:
-                val, _, _ = interp.interp0(args[i], env, (i, scope))
+            val, _, _ = interp.interp0(args[i], env, scope.extend())
             env.define(exec_scope, # scope
                        name, # var name
                        val) # value
@@ -134,19 +110,6 @@ class Func():
         # args = 1, 2 & 3, 4; args_name = x, y & ...
         # args = []; args_name = [] & ...
         # args = [] & 1, 2; args_name = [] & ...
-        if self.varargs:
-            if self.varargs_fexpr:
-                env.define(exec_scope, # scope
-                           "...", # var name
-                           Quote(args[len(self.args_name):])) # value
-            else:
-                varargs_val = []
-                for i, expr in enumerate(args[len(self.args_name):]):
-                    varargs_val.append(interp.interp0(expr, env, (i, scope))[0])
-                env.define(exec_scope, # scope
-                           "...", # var name
-                           Quote(varargs_val)) # value
-            gc.add(exec_scope, ["..."])
         val, _, _ = interp.interp0(self.body, env, exec_scope)
         if isinstance(val, Func):
             val.closureGC[1].append(gc)
@@ -174,6 +137,7 @@ def PyFunc(name, fexpr=False):
             Env.buintin_func.append((name, self))
 
         def __call__(self, args, env, scope):
+            assert type(scope) is Scope
             # print(self.name, "start")
             if fexpr:
                 val, _, gc = self.func(args, env, scope)
