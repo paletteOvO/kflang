@@ -1,5 +1,5 @@
 from util import *
-
+from kftypes import Number, String, Symbol
 
 class Scope(tuple):
     __static_id = [1]
@@ -25,14 +25,16 @@ class Scope(tuple):
 
 class Env():
     buintin_func = []
-    counter = 0
-    def __init__(self):
+    def __init__(self, buintin_func=None):
         self.env = dict() # [(name, scope)] -> val
-        init_env(self, self.buintin_func)
+        if buintin_func is None:
+            init_env(self, self.buintin_func)
+        else:
+            init_env(self, buintin_func)
 
     def get(self, scope, name):
         typeCheck(scope, [Scope])
-        typeCheck(name, [str])
+        typeCheck(name, [Symbol])
         if name == "__scope":
             return scope
         # print(f"get {name} from {scope}")
