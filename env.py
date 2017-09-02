@@ -25,12 +25,8 @@ class Scope(tuple):
 
 class Env():
     buintin_func = []
-    def __init__(self, buintin_func=None):
+    def __init__(self):
         self.env = dict() # [(name, scope)] -> val
-        if buintin_func is None:
-            init_env(self, self.buintin_func)
-        else:
-            init_env(self, buintin_func)
 
     def get(self, scope, name):
         typeCheck(scope, [Scope])
@@ -60,6 +56,8 @@ class Env():
             self.env[(name, scope)] = val
 
     def define(self, scope, name, val):
+        typeCheck(scope, [NoneType, Scope])
+        typeCheck(name, [Symbol])
         # print(f"Define: {(name, scope)} -> {val}")
         var = (name, scope)
         if var in self.env:
@@ -79,13 +77,6 @@ class Env():
         # index = (name, scope)
         del self.env[index]
 
-def init_env(env, buintin_func):
-    # print(buintin_func)
-    for i in buintin_func:
-        env.define(None, i[0], i[1])
-    env.define(None, "#t", True)
-    env.define(None, "#f", False)
-    env.define(None, "#n", None)
 
 class GC():
     def __init__(self, env):

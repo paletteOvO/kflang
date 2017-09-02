@@ -1,5 +1,7 @@
 from collections import namedtuple
 
+NoneType = type(None)
+
 
 def is_quote_by(s, q):
     return len(s) > 1 and q == s[0] == s[-1]
@@ -12,6 +14,9 @@ def scopeDeep(scope):
 
 def typeCheck(var, t):
     # typeCheck(var, [type1, type2..])
-    vt = type(var)
-    if not any(vt is t for t in t):
-        raise TypeError(f"Expected <{'|'.join(t.__qualname__ for t in t)}>, Found {vt.__qualname__}")
+    if isinstance(t, list):
+        res = any(isinstance(var, t) for t in t)
+    else:
+        res = isinstance(var, t)
+    if not res:
+        raise TypeError(f"Expected <{'|'.join(t.__qualname__ for t in t)}>, Found {type_var.__qualname__}")
