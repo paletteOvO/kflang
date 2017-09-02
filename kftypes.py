@@ -2,6 +2,7 @@ from util import *
 isnumber = lambda x: type(x) is Number
 isstring = lambda x: type(x) is String
 issymbol = lambda x: type(x) is Symbol
+isboolean = lambda x: type(x) is Boolean
 
 islist = lambda x: type(x) is list
 
@@ -82,8 +83,11 @@ class Expr():
                 typeCheck(func, [Func])
                 self.value = func.call(self.env, scope, e)
             self.evaluated = True
-            typeCheck(self.value, [Func, String, Number, Symbol, NoneType])
+            typeCheck(self.value, [Func, String, Number, Symbol, NoneType, Boolean])
+            # print(self)
         return self.value
 
     def __repr__(self):
-        return f"Expr(scope={self.scope}, expr={self.expr}, value={self.value}, evaluated={self.evaluated})"
+        return f"Expr(expr={self.expr})"
+
+Boolean = bool

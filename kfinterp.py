@@ -40,12 +40,12 @@ class Execute():
     def __init__(self, expr):
         self.stack = []
         self.env = Env()
-        init_env(self.env)
+        init_std(self.env)
         
         self._execute(expr)
 
     def _call(self, scope, expr):
-        typeCheck(expr, [list, Symbol, Number, String])
+        typeCheck(expr, [list, Symbol, Number, String, Boolean])
         return Expr(self.env, scope, expr)
 
     def _execute(self, expr):
@@ -55,7 +55,10 @@ class Execute():
             if type(e) is Call:
                 es = e.scope
                 expr = [s.pop() for i in range(e.arg_len)]
-                res = [Expr(self.env, es, i if i is not None else s.pop()) for i in expr]
+                res = []
+                for i in expr:
+                    v = s.pop() if i is None else i
+                    res.append(v if isexpr(v) else Expr(self.env, es, v))
                 res.reverse()
                 s.append(self._call(es, res))
             else:
@@ -64,44 +67,16 @@ class Execute():
     def result(self):
         return self.stack[-1].eval()
 
-@PyFunc
-def _do(env, scope, args):
-    for i in args:
-        typeCheck(i, [Expr])
-        v = i.eval()
-    typeCheck(v, [NoneType, Func, Symbol, Number, String])
-    return v
-
-@PyFunc
-def _add(env, scope, args):
-    v = Number(sum(e.eval() for k, e in enumerate(args) if k != 0))
-    # typeCheck(v, [Symbol, Number, String])
-    return v
-
-@PyFunc
-def _def(env: Env, scope, args):
-    # (def <varname> <expr>)
-    typeCheck(args[1].expr, [Symbol])
-    env.define(scope.back(), args[1].expr, args[2])
-    return None
-
-@PyFunc
-def _fn(env: Env, scope, args):
-    # (fn (<var list>) <expr>)
-    print(args)
-    typeCheck(args[1].expr.expr, [list])
-    var_list = [i.expr for i in args[1].expr.expr]
-    all(typeCheck(i, [Symbol]) for i in var_list)
-    typeCheck(args[2], [Expr])
-    return Func(var_list, args[2])
 
 def main():
-    string = "((do (fn (x) x)) 2)"
+    string = "(= 1 1)"
     expr = Parser().parse(string)
     e = Execute(expr)
     print(e.result())
 
-def init_env(env: Env):
+
+def init_std(env: Env):
+    from kfstd import _do, _add, _mul, _def, _fn, _if, _let, _eq
     rs = Scope.root_scope()
     def define(name, value):
         e = Expr(env, None, None)
@@ -110,11 +85,18 @@ def init_env(env: Env):
         env.define(None, Symbol(name), e)
     define("do", _do)
     define("+", _add)
+    define("*", _mul)
     define("def", _def)
     define("fn", _fn)
+    define("if", _if)
+    define("let", _let)
+    
+    define("=", _eq)
+
     define("#t", True)
     define("#f", False)
     define("#n", None)
 
 if __name__ == "__main__":
     main()
+    

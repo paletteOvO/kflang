@@ -1,3 +1,4 @@
+from functools import *
 from collections import namedtuple
 
 NoneType = type(None)
