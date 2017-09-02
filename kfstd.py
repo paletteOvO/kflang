@@ -1,80 +1,17 @@
-from functools import reduce
-from typing import List, Tuple
-
-from env import GC, Env, Scope
-from interp import interp0, parse
-from type import (Func, Lazy, PyFunc, Quote, String, is_float, is_func, is_int,
-                  is_none, is_quote, is_string, is_lazy, Ret)
 from util import *
 
+from typing import List, Tuple
+
+from env import Env, Scope
+from kftypes import PyFunc, Func
 # Lang
-@PyFunc("do", fexpr=True)
-def _do(args, env, expr_scope: Scope, scope: Scope):
-    typeCheck(scope, [Scope])
-    typeCheck(expr_scope, [Scope])
-    # GC: [(scope varlist) ...]
-    # (do ...)
-    # print(f"{' ' * scopeDeep(scope)} do {args}")
-    res = None
-    gc = GC(env)
-    setFunc = []
-    for index, arg in enumerate(args):
-        # print(f"{' ' * scopeDeep(scope)}|do {i}")
-        if type(arg) is list or type(arg) is Quote:
-            fun, _, _gc = interp0(arg[0], env, expr_scope, scope)
-            # print(f"{' ' * scopeDeep(scope)}_GC {gc.val}, {gc.otherGC}")
-            gc.extend(_gc)
-            res, _, _gc = fun(arg[1:], env, scope, scope.extend())
-            if fun.name == "set" and (is_func(res) or is_lazy(res)):
-                setFunc.append(res)
-            else:
-                gc.extend(_gc)
-        else:
-            res, _, _gc = interp0(arg, env, expr_scope, scope)
-    # print("DO")
-    # gc.printClosureGC()
-    if type(res) is Func:
-        setFunc.append(res)
-    for i in setFunc:
-        i.closureGC[1].append(gc)
-    if not setFunc:
-        env.clean(gc)
-    # print(f"{' ' * scopeDeep(scope)} end do")
-    return Ret(res)
-
-@PyFunc("def", fexpr=True)
-def _def(args, env, expr_scope: Scope, scope: Scope):
-    # (def <name> <val>)
-    # (def (<name> <args>) <body>) => (def <name> (lambda (<args>) <body>))
-    # print(f"define at {scope}")
-    gc = GC(env)
-    varlist = []
-    if isinstance(args[0], list):
-        var = str(args[0][0])
-        fn = Func(args[0][1:], args[1], scope, var)
-        varlist.append(var)
-        env.define(expr_scope, var, fn)
-    else:
-        var = str(args[0])
-        val, _, _gc = interp0(args[1], env, expr_scope, scope)
-        varlist.append(var)
-        gc.extend(_gc)
-        env.define(expr_scope, var, val)
-    gc.add(expr_scope, varlist)
-    return Ret(None, gc=gc)
-
-@PyFunc("fn", fexpr=True)
-def _fn(args, env, expr_scope: Scope, scope: Scope):
+@PyFunc
+def _fn(args, env, scope: Scope):
     # (fn (<fun args>) <fun body>)
-    return Ret(Func(args[0], args[1], scope))
+    return Func(scope, args)
 
-@PyFunc("lazy", fexpr=True)
-def _lazy(args: List, env: Env, expr_scope: Scope, scope: Scope):
-    # Lazy(scope, body)
-    return Ret(Lazy(env, scope, args[0]))
-
-@PyFunc("if", fexpr=True)
-def _if(args, env, expr_scope: Scope, scope: Scope):
+@PyFunc
+def _if(args, env, scope: Scope):
     # (if <b> <t> <f>)
     val = None
     gc = GC(env)

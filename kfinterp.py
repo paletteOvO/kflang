@@ -3,50 +3,11 @@
 """
 from functools import *
 from kfparser import parse
-from kftypes import Number, String, Symbol, Func, PyFunc
+from kftypes import *
 from env import *
 from util import *
 
-isnumber = lambda x: type(x) is Number
-isstring = lambda x: type(x) is String
-issymbol = lambda x: type(x) is Symbol
-
-islist = lambda x: type(x) is list
-
-isexpr = lambda x: type(x) is Expr
-
 Call = namedtuple("Call", "scope arg_len")
-
-class Expr():
-    def __init__(self, env, scope, expr):
-        typeCheck(expr, [Expr, NoneType, String, Number, Symbol, list])
-        self.env = env
-        self.scope = scope
-        self.expr = expr
-        self.value = None
-        self.evaluated = False
-        
-    def eval(self):
-        scope = self.scope
-        e = self.expr
-        if not self.evaluated:
-            if isnumber(e) or isstring(e) or e is None:
-                self.value = e
-            elif issymbol(e):
-                self.value = self.env.get(scope, e).eval()
-            elif isexpr(e):
-                self.value = e.eval()
-            else:
-                typeCheck(e, [list])
-                func: Func = e[0].eval()
-                typeCheck(func, [Func])
-                self.value = func.call(self.env, scope, e)
-            self.evaluated = True
-            typeCheck(self.value, [Func, String, Number, Symbol, NoneType])
-        return self.value
-
-    def __repr__(self):
-        return f"Expr(scope={self.scope}, expr={self.expr}, value={self.value}, evaluated={self.evaluated})"
 
 class Parser():
     def parse(self, string):
@@ -113,19 +74,29 @@ def _do(env, scope, args):
 
 @PyFunc
 def _add(env, scope, args):
-    v = Number(sum(i.eval() for i in args))
+    v = Number(sum(e.eval() for k, e in enumerate(args) if k != 0))
     # typeCheck(v, [Symbol, Number, String])
     return v
 
 @PyFunc
 def _def(env: Env, scope, args):
     # (def <varname> <expr>)
-    typeCheck(args[0].expr, [Symbol])
-    env.define(scope.back(), args[0].expr, args[1])
+    typeCheck(args[1].expr, [Symbol])
+    env.define(scope.back(), args[1].expr, args[2])
     return None
 
+@PyFunc
+def _fn(env: Env, scope, args):
+    # (fn (<var list>) <expr>)
+    print(args)
+    typeCheck(args[1].expr.expr, [list])
+    var_list = [i.expr for i in args[1].expr.expr]
+    all(typeCheck(i, [Symbol]) for i in var_list)
+    typeCheck(args[2], [Expr])
+    return Func(var_list, args[2])
+
 def main():
-    string = "(do (def x (+ 0.1 0.2)) (def y (+ 0 x)) y)"
+    string = "((do (fn (x) x)) 2)"
     expr = Parser().parse(string)
     e = Execute(expr)
     print(e.result())
@@ -140,6 +111,7 @@ def init_env(env: Env):
     define("do", _do)
     define("+", _add)
     define("def", _def)
+    define("fn", _fn)
     define("#t", True)
     define("#f", False)
     define("#n", None)

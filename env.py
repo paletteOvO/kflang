@@ -1,27 +1,5 @@
 from util import *
-from kftypes import Number, String, Symbol
-
-class Scope(tuple):
-    __static_id = [1]
-    __static_root_scope = [None]
-    def __hash__(self):
-        return self[0]
-
-    def extend(self, id=None):
-        if not id:
-            id = self.__static_id[0]
-            self.__static_id[0] += 1
-        return Scope((id, self))
-    
-    def back(self):
-        return self[1]
-
-    @staticmethod
-    def root_scope():
-        if not Scope.__static_root_scope[0]:
-            Scope.__static_root_scope[0] = Scope((0, None))
-        return Scope.__static_root_scope[0]
-
+from kftypes import *
 
 class Env():
     buintin_func = []
@@ -29,16 +7,22 @@ class Env():
         self.env = dict() # [(name, scope)] -> val
 
     def get(self, scope, name):
-        typeCheck(scope, [Scope])
+        typeCheck(scope, [NoneType, Scope])
         typeCheck(name, [Symbol])
-        if name == "__scope":
+        if name == "#scope":
             return scope
+        o = scope
         # print(f"get {name} from {scope}")
         while scope is not None and (name, scope) not in self.env:
             scope = scope.back()
-        return self.env[(name, scope)]
+        if (name, scope) in self.env:
+            return self.env[(name, scope)]
+        else:
+            raise KeyError((name, o))
 
     def set(self, scope, name, val):
+        typeCheck(scope, [NoneType, Scope])
+        typeCheck(name, [Symbol])
         o = scope
         while scope is not None and (name, scope) not in self.env:
             scope = scope.back()
