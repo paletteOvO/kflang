@@ -9,42 +9,41 @@ from util import *
 
 # Lang
 @PyFunc("do", fexpr=True)
-def _do(args, env, scope: Scope):
-    assert type(scope) is Scope
+def _do(args, env, expr_scope: Scope, scope: Scope):
+    typeCheck(scope, [Scope])
+    typeCheck(expr_scope, [Scope])
     # GC: [(scope varlist) ...]
     # (do ...)
     # print(f"{' ' * scopeDeep(scope)} do {args}")
     res = None
     gc = GC(env)
     setFunc = []
-    for s, i in enumerate(args):
+    for index, arg in enumerate(args):
         # print(f"{' ' * scopeDeep(scope)}|do {i}")
-        if type(i) is list or type(i) is Quote:
-            fun, _, _gc = interp0(i[0], env, scope)
+        if type(arg) is list or type(arg) is Quote:
+            fun, _, _gc = interp0(arg[0], env, expr_scope, scope)
             # print(f"{' ' * scopeDeep(scope)}_GC {gc.val}, {gc.otherGC}")
             gc.extend(_gc)
-            res, _, _gc = fun(i[1:], env, scope.extend())
+            res, _, _gc = fun(arg[1:], env, scope, scope.extend())
             if fun.name == "set" and (is_func(res) or is_lazy(res)):
-                # print(fun.name)
                 setFunc.append(res)
             else:
                 gc.extend(_gc)
         else:
-            res, _, _gc = interp0(i, env, scope)
+            res, _, _gc = interp0(arg, env, expr_scope, scope)
     # print("DO")
     # gc.printClosureGC()
-    if is_func(res):
+    if type(res) is Func:
         setFunc.append(res)
     for i in setFunc:
         i.closureGC[1].append(gc)
     if not setFunc:
         env.clean(gc)
-    # print(f"{' ' * scopeDeep(scope)} enddo")
+    # print(f"{' ' * scopeDeep(scope)} end do")
     return Ret(res)
-    # print("==")
 
 @PyFunc("def", fexpr=True)
-def _def(args, env, scope):
+def _def(args, env, expr_scope: Scope, scope: Scope):
     # (def <name> <val>)
     # (def (<name> <args>) <body>) => (def <name> (lambda (<args>) <body>))
     # print(f"define at {scope}")
@@ -53,55 +52,51 @@ def _def(args, env, scope):
     if isinstance(args[0], list):
         var = str(args[0][0])
         fn = Func(args[0][1:], args[1], scope, var)
-        if var[0] == "$":
-            var = var[1:]
         varlist.append(var)
-        env.define(scope[1], var, fn)
+        env.define(expr_scope, var, fn)
     else:
         var = str(args[0])
-        if var[0] == "$":
-            var = var[1:]
-        val, _, _gc = interp0(args[1], env, scope[1])
+        val, _, _gc = interp0(args[1], env, expr_scope, scope)
         varlist.append(var)
         gc.extend(_gc)
-        env.define(scope[1], var, val)
-    gc.add(scope[1], varlist)
+        env.define(expr_scope, var, val)
+    gc.add(expr_scope, varlist)
     return Ret(None, gc=gc)
 
 @PyFunc("fn", fexpr=True)
-def _fn(args, env, scope):
+def _fn(args, env, expr_scope: Scope, scope: Scope):
     # (fn (<fun args>) <fun body>)
     return Ret(Func(args[0], args[1], scope))
 
 @PyFunc("lazy", fexpr=True)
-def _lazy(args, env: Env, scope):
+def _lazy(args: List, env: Env, expr_scope: Scope, scope: Scope):
     # Lazy(scope, body)
     return Ret(Lazy(env, scope, args[0]))
 
 @PyFunc("if", fexpr=True)
-def _if(args, env, scope):
+def _if(args, env, expr_scope: Scope, scope: Scope):
     # (if <b> <t> <f>)
     val = None
     gc = GC(env)
-    boolean, _, _gc = interp0(args[0], env, scope)
+    boolean, _, _gc = interp0(args[0], env, expr_scope, scope)
     gc.extend(_gc)
     env.clean(_gc)
     if boolean is True:
-        val, _, _gc = interp0(args[1], env, scope)
+        val, _, _gc = interp0(args[1], env, expr_scope, scope)
         gc.extend(_gc)
     elif boolean is False and len(args) > 2:
-        val, _, _gc = interp0(args[2], env, scope)
+        val, _, _gc = interp0(args[2], env, expr_scope, scope)
         gc.extend(_gc)
     env.clean(gc)
     return Ret(val, gc=gc)
 
 @PyFunc("let", fexpr=True)
-def _let(args, env, scope):
+def _let(args, env, expr_scope: Scope, scope: Scope):
     # (let ((<name> <value>) ... ) <body>)
     gc = GC(env)
     varlist = []
     for i in args[0]:
-        val, _, _gc = interp0(i[1], env, scope)
+        val, _, _gc = interp0(i[1], env, expr_scope, scope)
         env.clean(_gc)
         env.define(
             scope, # scope
@@ -109,70 +104,65 @@ def _let(args, env, scope):
             val) # value
         varlist.append(str(i[0]))
     gc.add(scope, varlist)
-    val, _, _gc = interp0(args[1], env, scope)
+    val, _, _gc = interp0(args[1], env, expr_scope, scope)
     env.clean(gc)
     env.clean(_gc)
     return Ret(val)
 
 @PyFunc("while", fexpr=True)
-def _while(args: List, env: Env, scope: Scope):
+def _while(args: List, env: Env, expr_scope: Scope, scope: Scope):
     assert type(scope) is Scope
     # (while <bool> <body>)
-    val, _, _gc = interp0(args[0], env, scope)
+    val, _, _gc = interp0(args[0], env, expr_scope, scope)
     env.clean(_gc)
     while val:
-        _, _, _gc = interp0(args[1], env, scope)
-        val, _, _gc1 = interp0(args[0], env, scope)
+        _, _, _gc = interp0(args[1], env, expr_scope, scope)
+        val, _, _gc1 = interp0(args[0], env, expr_scope, scope)
         env.clean(_gc)
         env.clean(_gc1)
     return Ret(None)
 
 @PyFunc("set", fexpr=True)
-def _set(args, env: Env, scope):
+def _set(args: List, env: Env, expr_scope: Scope, scope: Scope):
     # (set <name> <val>) | (set (<name> <args>) ><body>)
     gc = GC(env)
     if isinstance(args[0], list):
-        val = Func(args[0][1:], args[1], scope[1])
+        val = Func(args[0][1:], args[1], scope)
         name = str(args[0][0])
-        if name[0] == "$":
-            env.set(scope[1], name[1:], val)
-        else:
-            env.set(scope[1], name, val)
+        env.set(expr_scope, name, val)
     else:
-        val, _, _gc = interp0(args[1], env, scope[1])
+        val, _, _gc = interp0(args[1], env, scope.back(), scope)
         gc.extend(_gc)
-        env.set(scope[1], str(args[0]), val)
+        env.set(expr_scope, str(args[0]), val)
     env.clean(gc)
     return Ret(val, gc=gc)
 
 @PyFunc("env")
-def _env(args, env: Env, scope):
+def _env(args: List, env: Env, expr_scope: Scope, scope: Scope):
     return Ret(env.env)
 
 @PyFunc("apply")
-def _apply(args, env: Env, scope):
+def _apply(args: List, env: Env, expr_scope: Scope, scope: Scope):
     # (apply <fun> <args>)
     # print(args)
     # print(args)
-    return args[0](args[1], env, scope)
+    return args[0](args[1], env, expr_scope, scope)
 
 @PyFunc("load")
-def _load(args, env: Env, scope):
+def _load(args: List, env: Env, expr_scope: Scope, scope: Scope):
     # (load <fileName))
     gc = GC(env)
     with open(args[0], "r", encoding="utf8") as f:
-        s = scope[1]
         for i in parse(f.read()):
-            val, _, _gc = interp0(i, env, s.extend())
+            val, _, _gc = interp0(i, env, scope, scope.extend())
             gc.extend(_gc)
     return Ret(None, gc=gc)
 
-
 @PyFunc("match", fexpr=True)
-def _match(args, env, scope):
+def _match(args, env, expr_scope: Scope, scope: Scope):
     # print(f"(match {args})")
     # (match x pattern expr ...) -> expr | (match x ...)
-    v = interp0(args[0], env, scope)[0]
+    v = interp0(args[0], env, expr_scope, scope)[0]
     env._set(scope, "__match__tmp", v)
     GC(env).add(scope, ["__match__tmp"])
     pattern = args[1]
@@ -181,15 +171,15 @@ def _match(args, env, scope):
         if isinstance(pattern, list) and pattern[0] == "?":
             # (? fun args...)
             # print(pattern[1:] + [args[0]])
-            val = interp0(pattern[1:] + ["__match__tmp"], env, scope)[0]
+            val = interp0(pattern[1:] + ["__match__tmp"], env, expr_scope, scope)[0]
             if val:
-                return Ret(interp0(expr, env, scope)[0])
+                return Ret(interp0(expr, env, expr_scope, scope)[0])
             else:
                 continue
         b = patternMatch(pattern, v)
         if b is not False:
             env._update(scope, b)
-            val, _, _ = interp0(expr, env, scope)
+            val, _, _ = interp0(expr, env, expr_scope, scope)
             return Ret(val)
     return Ret(None)
 
@@ -226,27 +216,27 @@ def patternMatch(pattern, lst):
 
 # Math
 @PyFunc("+")
-def _add(args, env, scope):
+def _add(args, env, expr_scope: Scope, scope: Scope):
     return Ret(reduce(lambda x, y: x + y, args))
 
 @PyFunc("-")
-def _sub(args, env, scope):
+def _sub(args, env, expr_scope: Scope, scope: Scope):
     return Ret(reduce(lambda x, y: x - y, args))
 
 @PyFunc("*")
-def _mul(args, env, scope):
+def _mul(args, env, expr_scope: Scope, scope: Scope):
     return Ret(reduce(lambda x, y: x * y, args))
 
 @PyFunc("/")
-def _div(args, env, scope):
+def _div(args, env, expr_scope: Scope, scope: Scope):
     return Ret(reduce(lambda x, y: x / y, args))
 
 @PyFunc("%")
-def _mod(args, env, scope):
+def _mod(args, env, expr_scope: Scope, scope: Scope):
     return Ret(reduce(lambda x, y: x % y, args))
 
 @PyFunc("=")
-def _eq(args, env, scope):
+def _eq(args, env, expr_scope: Scope, scope: Scope):
     x = args[0]
     for i in args:
         if x != i:
@@ -254,7 +244,7 @@ def _eq(args, env, scope):
     return Ret(True)
 
 @PyFunc(">")
-def _gt(args, env, scope):
+def _gt(args, env, expr_scope: Scope, scope: Scope):
     x = args[0]
     for i in range(1, len(args)):
         if not (x > args[i]):
@@ -262,7 +252,7 @@ def _gt(args, env, scope):
     return Ret(True)
 
 @PyFunc("<")
-def _lt(args, env, scope):
+def _lt(args, env, expr_scope: Scope, scope: Scope):
     x = args[0]
     for i in range(1, len(args)):
         if not (x < args[i]):
@@ -270,7 +260,7 @@ def _lt(args, env, scope):
     return Ret(True)
 
 @PyFunc(">=")
-def _ge(args, env, scope):
+def _ge(args, env, expr_scope: Scope, scope: Scope):
     x = args[0]
     for i in range(1, len(args)):
         if not (x >= args[i]):
@@ -278,7 +268,7 @@ def _ge(args, env, scope):
     return Ret(True)
 
 @PyFunc("<=")
-def _le(args, env, scope):
+def _le(args, env, expr_scope: Scope, scope: Scope):
     x = args[0]
     for i in range(1, len(args)):
         if not (x <= args[i]):
@@ -286,43 +276,43 @@ def _le(args, env, scope):
     return Ret(True)
 
 @PyFunc("!=")
-def _neq(args, env, scope):
+def _neq(args, env, expr_scope: Scope, scope: Scope):
     return Ret(args[0] != args[1])
 
 # Binary Operation
 @PyFunc("&")
-def _bitand(args, env, scope):
+def _bitand(args, env, expr_scope: Scope, scope: Scope):
     return Ret(args[0] & args[1])
 
 @PyFunc("|")
-def _bitor(args, env, scope):
+def _bitor(args, env, expr_scope: Scope, scope: Scope):
     return Ret(args[0] | args[1])
 
 @PyFunc("^")
-def _bitxor(args, env, scope):
+def _bitxor(args, env, expr_scope: Scope, scope: Scope):
     return Ret(args[0] ^ args[1])
 
 @PyFunc("shl")
-def _shl(args, env, scope):
+def _shl(args, env, expr_scope: Scope, scope: Scope):
     # 1 << 2
     # (shl 1 2)
     return Ret(args[0] << args[1])
 
 @PyFunc("shr")
-def _shr(args, env, scope):
+def _shr(args, env, expr_scope: Scope, scope: Scope):
     # 1 >> 2
     # (shr 1 2)
     return Ret(args[0] >> args[1])
 
 # IO
 @PyFunc("printf")
-def _printf(args, env, scope):
+def _printf(args, env, expr_scope: Scope, scope: Scope):
     # (printf str args)
     print(args[0].format(*args[1:]), end='')
     return Ret(None)
 
 @PyFunc("input")
-def _input(args, env, scope):
+def _input(args, env, expr_scope: Scope, scope: Scope):
     res = map(str, args)
     return Ret(input(" ".join(res)))
 
@@ -335,29 +325,29 @@ def _exit(args, _, __):
     return Ret(None)
 
 @PyFunc("exec")
-def _exec(args, env, scope):
+def _exec(args, env, expr_scope: Scope, scope: Scope):
     res = list(map(str, args))
     from subprocess import call
     # print(res)
     return Ret(call(res))
 
 @PyFunc("eval")
-def _eval(args, env, scope):
+def _eval(args, env, expr_scope: Scope, scope: Scope):
     # print(args)
     if is_quote(args[0]):
-        return Ret(interp0(args[0].val, env, scope)[0])
+        return Ret(interp0(args[0].val, env, expr_scope, scope)[0])
     else:
-        return Ret(interp0(args[0], env, scope)[0])
+        return Ret(interp0(args[0], env, expr_scope, scope)[0])
 
 @PyFunc("read")
-def _read(args, env, scope):
+def _read(args, env, expr_scope: Scope, scope: Scope):
     # print(args)
     assert isinstance(args[0], str)
     return Ret(parse(args[0])[0])
 
 # STDLIB
 @PyFunc("range")
-def _range(args, env: Env, scope):
+def _range(args: List, env: Env, expr_scope: Scope, scope: Scope):
     # (range start end step)
     if len(args) == 3:
         return Ret(Quote(range(args[0], args[1], args[2])))
@@ -366,20 +356,20 @@ def _range(args, env: Env, scope):
 
 # Function
 @PyFunc("map")
-def _map(args, env: Env, scope):
+def _map(args: List, env: Env, expr_scope: Scope, scope: Scope):
     # (map fn quote)
     assert len(args) == 2
     assert is_func(args[0])
     assert is_quote(args[1])
     res = Quote([])
     for i in args[1]:
-        val, _, _gc = args[0]([i], env, scope)
+        val, _, _gc = args[0]([i], env, expr_scope, scope)
         env.clean(_gc)
         res.append(val)
     return Ret(res)
 
 @PyFunc("reduce")
-def _reduce(args, env: Env, scope):
+def _reduce(args: List, env: Env, expr_scope: Scope, scope: Scope):
     # (reduce fn quote default)
     # (fn (lastres ele))
     assert len(args) == 3
@@ -387,19 +377,19 @@ def _reduce(args, env: Env, scope):
     assert is_quote(args[1])
     lastres = args[2]
     for i in args[1]:
-        lastres, _, _gc = args[0]([lastres, i], env, scope)
+        lastres, _, _gc = args[0]([lastres, i], env, expr_scope, scope)
         env.clean(_gc)
     return Ret(lastres)
 
 @PyFunc("filter")
-def _filter(args, env: Env, scope):
+def _filter(args: List, env: Env, expr_scope: Scope, scope: Scope):
     # (filter fn quote)
     assert len(args) == 2
     assert is_func(args[0])
     assert is_quote(args[1])
     res = Quote([])
     for i in args[1]:
-        val, _, _gc = args[0]([i], env, scope)
+        val, _, _gc = args[0]([i], env, expr_scope, scope)
         env.clean(_gc)
         if val:
             res.append(i)
@@ -407,20 +397,20 @@ def _filter(args, env: Env, scope):
 
 # OO
 @PyFunc(".", fexpr=True)
-def _dot(args, env: Env, scope):
+def _dot(args: List, env: Env, expr_scope: Scope, scope: Scope):
     # (. obj func args)
-    obj = interp0(args[0], env, scope)[0]
+    obj = interp0(args[0], env, expr_scope, scope)[0]
     if len(args) == 2:
         return Ret(getattr(obj, args[1])())
     elif len(args) > 2:
         args_val = []
         for i in args[2:]:
-            args_val.append(interp0(i, env, scope)[0])
+            args_val.append(interp0(i, env, expr_scope, scope)[0])
         return Ret(getattr(obj, args[1])(*args_val))
 
 # Array
 @PyFunc("split")
-def _split(args, env: Env, scope):
+def _split(args: List, env: Env, expr_scope: Scope, scope: Scope):
     # (split quote start end step)
     assert is_quote(args[0])
     if len(args) == 2:
@@ -432,7 +422,7 @@ def _split(args, env: Env, scope):
         return Ret(Quote(args[0][args[1]:args[2]:args[3]]))
 
 @PyFunc("concat")
-def _concat(args, env: Env, scope):
+def _concat(args: List, env: Env, expr_scope: Scope, scope: Scope):
     # (concat arr) (concat arr separator)
     if len(args) == 2:
         return Ret(args[1].join(args[0]))
@@ -440,21 +430,21 @@ def _concat(args, env: Env, scope):
         return Ret(", ".join(args[0]))
 # Quote
 @PyFunc("quote", fexpr=True)
-def _quote(args, env, scope):
+def _quote(args, env, expr_scope: Scope, scope: Scope):
     # (quote x) | (quote (x))
-    return Ret(quote_interp(args[0], env, scope))
+    return Ret(quote_interp(args[0], env, expr_scope, scope))
 
-def quote_interp(q, env, scope):
+def quote_interp(q, env, expr_scope, scope):
     # (quote x) | (quote (x))
     if isinstance(q, list):
         if len(q) == 2 and q[0] == "unquote":
-            val, _, _ = interp0(q[1], env, scope)
+            val, _, _ = interp0(q[1], env, expr_scope, scope)
             return val
         else:
             new_quote = []
             for i in q:
                 if isinstance(i, list):
-                    val = quote_interp(i, env, scope)
+                    val = quote_interp(i, env, expr_scope, scope)
                     new_quote.append(val)
                 else:
                     new_quote.append(i)
@@ -463,7 +453,7 @@ def quote_interp(q, env, scope):
         return Quote(q)
 # Scope
 @PyFunc("scope")
-def _scope(args, env, scope):
+def _scope(args, env, expr_scope: Scope, scope: Scope):
     return Ret(scope)
 
 # Type

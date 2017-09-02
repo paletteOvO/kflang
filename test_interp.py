@@ -174,7 +174,7 @@ def test_sameenv():
     gc = env.GC(env0)
     s = Scope.root_scope()
     def _fun(e, y):
-        val, err, _gc = interp0(parse(y)[0], e, s.extend())
+        val, err, _gc = interp0(parse(y)[0], e, s, s.extend())
         gc.extend(_gc)
         return val
     unittest(lambda: env0, _fun, test_suite)
@@ -197,7 +197,7 @@ def test_do_env():
     gc = env.GC(env0)
     s = Scope.root_scope()
     def _fun(e, y):
-        val, err, _gc = interp0(parse(f"(do {y})")[0], e, s.extend())
+        val, err, _gc = interp0(parse(f"(do {y})")[0], e, s, s.extend())
         gc.extend(_gc)
         return val
     unittest(lambda: env0, _fun, test_suite + \
@@ -205,7 +205,7 @@ def test_do_env():
           (while (> i 0)\
           (do (set i (- i 1))\
               (((do ((do (fn (x) (fn (y) (fn (z) (+ x y z))))) 1)) 2) 3)))\
-          (. (env) __len__))", len(env.Env.buintin_func) + 3])
+          (. (env) __len__))", len(env.Env.buintin_func)])
     print(env0.counter)
 
 if __name__ == '__main__':

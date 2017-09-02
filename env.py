@@ -1,5 +1,6 @@
 from util import *
 
+
 class Scope(tuple):
     __static_id = [1]
     __static_root_scope = [None]
@@ -11,14 +12,15 @@ class Scope(tuple):
             id = self.__static_id[0]
             self.__static_id[0] += 1
         return Scope((id, self))
+    
+    def back(self):
+        return self[1]
 
     @staticmethod
     def root_scope():
-        if Scope.__static_root_scope[0]:
-            return Scope.__static_root_scope[0]
-        else:
+        if not Scope.__static_root_scope[0]:
             Scope.__static_root_scope[0] = Scope((0, None))
-            return Scope.__static_root_scope[0]
+        return Scope.__static_root_scope[0]
 
 
 class Env():
@@ -29,20 +31,22 @@ class Env():
         init_env(self, self.buintin_func)
 
     def get(self, scope, name):
+        typeCheck(scope, [Scope])
+        typeCheck(name, [str])
+        if name == "__scope":
+            return scope
         # print(f"get {name} from {scope}")
-        while scope is not None and\
-              (name, scope) not in self.env:
-            scope = scope[1]
+        while scope is not None and (name, scope) not in self.env:
+            scope = scope.back()
         return self.env[(name, scope)]
 
     def set(self, scope, name, val):
         o = scope
         while scope is not None and (name, scope) not in self.env:
-            scope = scope[1]
+            scope = scope.back()
         if (name, scope) in self.env:
             self.env[(name, scope)] = val
         else:
-            print(self.env)
             raise KeyError((name, o))
 
     def _set(self, scope, name, val):

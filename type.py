@@ -1,3 +1,4 @@
+from util import *
 from typing import List
 
 import env
@@ -33,7 +34,7 @@ def is_quote(s):
     return isinstance(s, Quote)
 
 def is_func(s):
-    return isinstance(s, Func)
+    return isinstance(s, Func) or isinstance(s, PyFunc)
 
 def is_lazy(s):
     return isinstance(s, Lazy)
@@ -91,26 +92,24 @@ class Func():
         self.closure = scope
         self.closureGC: List = [1, [None]]
 
-    def __call__(self, args, env, scope: Scope):
+    def __call__(self, args, env, expr_scope: Scope, scope: Scope):
         # ((lambda (...) ...) 1)
-        assert type(scope) is Scope
+        typeCheck(scope, [Scope])
         assert len(args) >= self.args_len - 1
-        exec_scope = self.closure.extend()
-        # (f x y ...) => (f 1 2) | (f 1 2 3 4)
-        # (f ...) => (f) | (f 1 2)
+        expr_scope = self.closure.extend()
         args_val = []
         gc = GC(env)
         for i, name in enumerate(self.args_name):
-            val, _, _ = interp.interp0(args[i], env, scope.extend())
-            env.define(exec_scope, # scope
+            val, _, _ = interp.interp0(args[i], env, expr_scope, scope.extend())
+            env.define(expr_scope, # scope
                        name, # var name
                        val) # value
-        gc.add(exec_scope, self.args_name)
+        gc.add(expr_scope, self.args_name)
         # args = 1, 2; args_name = x, y & ...
         # args = 1, 2 & 3, 4; args_name = x, y & ...
         # args = []; args_name = [] & ...
         # args = [] & 1, 2; args_name = [] & ...
-        val, _, _ = interp.interp0(self.body, env, exec_scope)
+        val, _, _ = interp.interp0(self.body, env, expr_scope, expr_scope.extend())
         if isinstance(val, Func):
             val.closureGC[1].append(gc)
             val.closureGC[1].extend(self.closureGC[1])
@@ -136,19 +135,21 @@ def PyFunc(name, fexpr=False):
             self.func = func
             Env.buintin_func.append((name, self))
 
-        def __call__(self, args, env, scope):
-            assert type(scope) is Scope
+        def __call__(self, args, env, expr_scope: Scope, scope: Scope):
+            typeCheck(scope, [Scope])
+            typeCheck(expr_scope, [Scope])
             # print(self.name, "start")
+            # print(self.name, expr_scope, scope)
             if fexpr:
-                val, _, gc = self.func(args, env, scope)
+                val, _, gc = self.func(args, env, expr_scope, scope)
             else:
                 args_val = []
                 gc = GC(env)
                 for i in args:
-                    val, _, _gc = interp.interp0(i, env, scope)
+                    val, _, _gc = interp.interp0(i, env, expr_scope, scope)
                     gc.extend(_gc)
                     args_val.append(val)
-                val, _, _gc = self.func(args_val, env, scope)
+                val, _, _gc = self.func(args_val, env, expr_scope, scope)
                 gc.extend(_gc)
             # print(self.name, "end")
             return Ret(val, gc=gc)
@@ -167,16 +168,19 @@ class Lazy():
         self.scope = scope
         self.body = body
         self.env = env
+        self.val = None
         self.closureGC: List = [1, [None]]
 
     def __repr__(self):
         return f"<Lazy-Eval>"
 
-    def __call__(self, name=None):
-        val, _, _ = interp.interp0(self.body, self.env, self.scope)
-        if name: self.env.set(self.scope, name, val)
-        return val
-    
+    def __call__(self):
+        if self.val:
+            return self.val
+        self.val, _, _ = interp.interp0(self.body, self.env, self.scope, self.scope.extend())
+        self.__del__()
+        return self.val
+
     def __del__(self):
         # [<count>, [<GC List>]]
         self.closureGC[0] -= 1
@@ -184,6 +188,7 @@ class Lazy():
             for i in self.closureGC[1]:
                 if i:
                     i.clean()
+
 class Empty(): pass
 
 class Ret():

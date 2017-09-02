@@ -2,8 +2,8 @@
 參照某天跟冰封提起的方法嘗試實現的一個解釋器
 """
 from env import GC, Env, Scope
-from type import (Quote, String, PyFunc, is_float, is_int, is_lazy, is_none, is_quote,
-                  is_string, Ret)
+from type import (PyFunc, Quote, Ret, String, is_float, is_int, is_lazy,
+                  is_none, is_quote, is_string)
 from util import *
 
 
@@ -156,10 +156,11 @@ def parse(expr):
             last[-1].append(obj)
     return res
 
-def interp0(expr, env, scope):
+def interp0(expr, env, expr_scope, scope):
     # print(f"{' ' * scopeDeep(scope)} interp {expr} :: {type(expr)}")
-    assert not is_quote(expr)
-    assert type(scope) is Scope
+    typeCheck(expr, [list, int, str, String])
+    typeCheck(scope, [Scope])
+    typeCheck(expr_scope, [Scope])
     if isinstance(expr, int):
         return Ret(expr)
     elif isinstance(expr, float):
@@ -170,12 +171,12 @@ def interp0(expr, env, scope):
         return Ret(expr)
     elif isinstance(expr, list):
         gc = GC(env)
-        fun, err, _gc = interp0(expr[0], env, scope)
+        fun, err, _gc = interp0(expr[0], env, expr_scope, scope)
         gc.extend(_gc)
         if err:
             return Ret(fun, err, gc)
         # print(f"interp {fun.name} at {scope}:")
-        val, err, _gc = fun(expr[1:], env, scope)
+        val, err, _gc = fun(expr[1:], env, expr_scope, scope)
         # print(f"{' ' * scopeDeep(scope)}{expr} -> {val} :: {type(val)}")
         gc.extend(_gc)
         return Ret(val, err, gc)
@@ -186,13 +187,13 @@ def interp0(expr, env, scope):
         return Ret(expr())
     else:
         val = env.get(scope, expr)
-        # print("val", val)
         if is_lazy(val):
-            return Ret(val(expr))
+            return Ret(val())
+        # print("val", val)
         else:
             return Ret(val)
 
 def interp(expr):
-    val, _, _ = interp0(expr, Env(), Scope.root_scope().extend())
+    s = Scope.root_scope()
+    val, _, _ = interp0(expr, Env(), s, s.extend())
     return val
-
