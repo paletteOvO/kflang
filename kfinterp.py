@@ -38,25 +38,27 @@ class Parser():
 
 class Execute():
     def __init__(self, expr):
+        typeCheck(expr, [list])
+        expr.reverse()
         self.stack = []
+        self.callstack = []
         self.env = Env()
+        self.expr = expr
         init_std(self.env)
-        
-        self._execute(expr)
 
     def _call(self, scope, expr):
         typeCheck(expr, [list, Symbol, Number, String, Boolean])
         return Expr(self.env, scope, expr)
 
-    def _execute(self, expr):
-        typeCheck(expr, [list])
+    def execute(self):
+        expr = self.expr
         s = self.stack
-        for e in expr:
+        while expr:
+            e = expr.pop()
             if type(e) is Call:
                 es = e.scope
-                expr = [s.pop() for i in range(e.arg_len)]
                 res = []
-                for i in expr:
+                for i in [s.pop() for i in range(e.arg_len)]:
                     v = s.pop() if i is None else i
                     res.append(v if isexpr(v) else Expr(self.env, es, v))
                 res.reverse()
@@ -69,33 +71,36 @@ class Execute():
 
 
 def main():
-    string = "(= 1 1)"
+    string = "(do 1)"
     expr = Parser().parse(string)
     e = Execute(expr)
+    e.execute()
     print(e.result())
 
+def define(env, name, value):
+    e = Expr(env, None, None)
+    e.value = value
+    e.evaluated = True
+    env.define(None, Symbol(name), e)
 
 def init_std(env: Env):
     from kfstd import _do, _add, _mul, _def, _fn, _if, _let, _eq
     rs = Scope.root_scope()
-    def define(name, value):
-        e = Expr(env, None, None)
-        e.value = value
-        e.evaluated = True
-        env.define(None, Symbol(name), e)
-    define("do", _do)
-    define("+", _add)
-    define("*", _mul)
-    define("def", _def)
-    define("fn", _fn)
-    define("if", _if)
-    define("let", _let)
+    global define
+    _define = lambda p1, p2: define(env, p1, p2)
+    _define("do", _do)
+    _define("+", _add)
+    _define("*", _mul)
+    _define("def", _def)
+    _define("fn", _fn)
+    _define("if", _if)
+    _define("let", _let)
     
-    define("=", _eq)
+    _define("=", _eq)
 
-    define("#t", True)
-    define("#f", False)
-    define("#n", None)
+    _define("#t", True)
+    _define("#f", False)
+    _define("#n", None)
 
 if __name__ == "__main__":
     main()

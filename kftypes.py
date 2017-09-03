@@ -30,13 +30,11 @@ class Scope(tuple):
         return Scope.__static_root_scope[0]
 
 class Symbol(namedtuple("Symbol", "value")):
-    __static = [0]
     def __init__(self, value):
-        self.id = self.__static[0]
-        self.__static[0]
+        self.hash = hash(value)
     
     def __hash__(self):
-        return self.id
+        return self.hash
     
 class Number(float): pass
 class String(str): pass

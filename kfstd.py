@@ -11,7 +11,7 @@ def _do(env, scope, args):
     for i in args:
         typeCheck(i, [Expr])
         v = i.eval()
-    typeCheck(v, [NoneType, Func, Symbol, Number, String])
+    typeCheck(v, [NoneType, Func, Symbol, Number, String, Boolean])
     return v
 
 @PyFunc
