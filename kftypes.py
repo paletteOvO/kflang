@@ -108,6 +108,13 @@ class Expr():
     def __repr__(self):
         return f"Expr(expr={self.expr})"
 
+class PreDefinedExpr(Expr):
+    def __init__(self, value):
+        super().__init__(None, None, None, None)
+        self.value = value
+        self.evaluated = True
+        self.eval = lambda *args: self.value
+
 def copyExprList(old):
     typeCheck(old, [list])
     stack = []

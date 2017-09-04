@@ -36,27 +36,8 @@ class Parser():
         e = f(lst, s, s.extend())
         return e
 
-def init_std(execute):
-    from kfstd import _do, _add, _mul, _def, _fn, _if, _let, _eq
-    rs = Scope.root_scope()
-    global define
-    _define = lambda p1, p2: define(execute, p1, p2)
-    _define("begin", _do)
-    _define("+", _add)
-    _define("*", _mul)
-    _define("define", _def)
-    _define("lambda", _fn)
-    _define("if", _if)
-    _define("let", _let)
-    
-    _define("=", _eq)
-
-    _define("#t", True)
-    _define("#f", False)
-    _define("#n", None)
-
 class Execute():
-    def __init__(self, expr, init=init_std):
+    def __init__(self, expr, init=None):
         typeCheck(expr, [list])
         self.stopFlag = [False]
         self.stack = []
@@ -64,8 +45,8 @@ class Execute():
         self.expr = expr
         self.index = 0
         self.len = len(expr)
-        init(self)
-        
+        init(self) if init else self.init_std()
+
         def _fun(env, _scope, args):
             # (call/cc func), func :: cc -> T, cc :: T -> T
             # typeCheck(args[1], [Func])
@@ -88,12 +69,10 @@ class Execute():
             fun: Func = args[1].eval()
             typeCheck(fun, [Func])
 
-            cc = Expr(None, None, None, self.stopFlag)
-            cc.value = PyFunc(_cc)
-            cc.evaluated = True
+            cc = PreDefinedExpr(PyFunc(_cc))
             return fun.call(self.env, _scope, Expr(None, None, [args[1], cc], self.stopFlag))
 
-        define(self, "call/cc", PyFunc(_fun))
+        self._define("call/cc", PyFunc(_fun))
 
     def _call(self, scope, expr):
         typeCheck(expr, [list])
@@ -125,21 +104,38 @@ class Execute():
         self.stack[-1].eval()
         return self.stack[-1].eval()
 
+    def _define(self, name, value):
+        e = PreDefinedExpr(value)
+        self.env.define(None, Symbol(name), e)
+
+    def init_std(self):
+        from kfstd import _do, _add, _mul, _def, _fn, _if, _let, _eq
+        rs = Scope.root_scope()
+        global define
+        _define = lambda p1, p2: self._define(p1, p2)
+        _define("begin", _do)
+        _define("+", _add)
+        _define("*", _mul)
+        _define("define", _def)
+        _define("lambda", _fn)
+        _define("if", _if)
+        _define("let", _let)
+        
+        _define("=", _eq)
+
+        _define("#t", True)
+        _define("#f", False)
+        _define("#n", None)
+
 
 def main():
-    string = "(call/cc (lambda (cc) (begin (define x 1) (cc x) (define x 1))))"
+    string = "(call/cc (lambda (cc) (begin (define x 1) (cc x) (define x 5))))"
     expr = Parser().parse(string)
     # print(expr)
     e = Execute(expr)
     e.execute()
     print("Result:", e.result())
     # print("Stack: ", e.stack)
-
-def define(execute, name, value):
-    e = Expr(execute.env, None, None, execute.stopFlag)
-    e.value = value
-    e.evaluated = True
-    execute.env.define(None, Symbol(name), e)
 
 
 
