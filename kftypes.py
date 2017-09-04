@@ -35,6 +35,9 @@ class Symbol(namedtuple("Symbol", "value")):
     
     def __hash__(self):
         return self.hash
+
+    def __eq__(self, obj):
+        return isinstance(obj, Symbol) and obj.hash == self.hash and obj.value == obj.value
     
 class Number(float): pass
 class String(str): pass
@@ -45,27 +48,42 @@ class Func():
         self.scope = expr.scope
         self.expr = expr
     
-    def call(self, env, _scope, args):
+    def call(self, env, _scope, expr):
         for index, var_name in enumerate(self.var_list, 1):
-            env.define(self.scope, var_name, args[index])
+            env.define(self.scope, var_name, expr.expr[index])
         return self.expr.eval()
 
-def PyFunc(fun):
-    import env
-    f = Func(None, Expr(None, None, None))
-    f.call = lambda env, scope, args: fun(env, scope, args)
-    return f
+class PyFunc(Func):
+    def __init__(self, fun):
+        self.fun = fun
+
+    def __call__(self, env, scope, args):
+        return self.fun(env, scope, args)
+    
+    call = __call__
 
 class Expr():
-    def __init__(self, env, scope, expr):
-        typeCheck(expr, [Expr, NoneType, String, Number, Symbol, list])
+    def __init__(self, env, scope, expr, stopFlag):
+        typeCheck(expr, [NoneType, String, Number, Symbol, list])
+        self.stopFlag = stopFlag
+        self.withStack = False
         self.env = env
         self.scope = scope
         self.expr = expr
         self.value = None
         self.evaluated = False
-        
+    
+    def set_stack(self, execute):
+        self.execute = execute
+        self.orig_stack = execute.stack
+        self.stack = copyExprList(execute.stack)
+        self.index = execute.index
+        self.withStack = True
+
+
     def eval(self):
+        if self.stopFlag[0]:
+            return self.value
         scope = self.scope
         e = self.expr
         if not self.evaluated:
@@ -73,19 +91,33 @@ class Expr():
                 self.value = e
             elif issymbol(e):
                 self.value = self.env.get(scope, e).eval()
-            elif isexpr(e):
-                self.value = e.eval()
             else:
                 typeCheck(e, [list])
                 func: Func = e[0].eval()
                 typeCheck(func, [Func])
-                self.value = func.call(self.env, scope, e)
+                self.value = func.call(self.env, scope, self)
             self.evaluated = True
             typeCheck(self.value, [Func, String, Number, Symbol, NoneType, Boolean])
             # print(self)
         return self.value
+    
+    def __getitem__(self, n):
+        TypeError(self.expr, [list])
+        return self.expr[n]
 
     def __repr__(self):
         return f"Expr(expr={self.expr})"
+
+def copyExprList(old):
+    typeCheck(old, [list])
+    stack = []
+    for i in old:
+        typeCheck(i, [Expr])
+        if isinstance(i.expr, list):
+            stack.append(Expr(i.env, i.scope, copyExprList(i.expr), i.stopFlag))
+        else:
+            stack.append(Expr(i.env, i.scope, i.expr, i.stopFlag))
+
+    return stack
 
 Boolean = bool

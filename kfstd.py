@@ -120,6 +120,7 @@ def patternMatch(pattern, lst):
 @PyFunc
 def _add(env, scope, args):
     v = Number(sum(e.eval() for k, e in enumerate(args) if k != 0))
+    print(v)
     # typeCheck(v, [Symbol, Number, String])
     return v
 
