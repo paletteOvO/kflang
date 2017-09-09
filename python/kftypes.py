@@ -9,7 +9,7 @@ islist = lambda x: type(x) is list
 isexpr = lambda x: type(x) is Expr
 
 class Scope(tuple):
-    __static_id = [1]
+    __static_id = [1]   
     __static_root_scope = [None]
     def __hash__(self):
         return self[0]
