@@ -19,10 +19,40 @@ def valueof(s):
     except Exception:
         return str(s)
 
+islist = lambda x: isinstance(x, list)
+
+def cps(lst):
+    i = 0
+    def nextvar():
+        nonlocal i
+        i += 1
+        return "v" + str(i)
+
+    def f(lst, var):
+        expr_list = []
+        ret = []
+        for expr in lst:
+            if islist(expr):
+                k = nextvar()
+                ret.append(k)
+                expr_list.extend(f(expr, k))
+            else:
+                ret.append(expr)
+        expr_list.extend([(var, ret)])
+        return expr_list
+    k = f(lst, "_")
+    _, x = k.pop()
+    while k:
+        v, e = k.pop()
+        x = ["&", e, ["lambda", v, x]]
+    return x
+
 def eval(s, env):
     if type(s) is list:
         if s[0] == "lambda":
             return (s, env.copy())
+        if s[0] == "&":
+            return eval([s[2], s[1]], env)
         fun, *args = [eval(i, env) for i in s]
         if type(fun) is tuple:
             (_, v, body), env = fun
@@ -34,5 +64,11 @@ def eval(s, env):
     elif type(s) is float:
         return s
 
-env = {"+": lambda x:x[0] + x[1]}
-print(eval(parse("((lambda x (+ 1 x)) 1)"), env))
+def main():
+    env = {
+        "+": lambda x: x[0] + x[1]
+    }
+    print(eval(cps(parse("((lambda x x) 1)")), env))
+
+if __name__ == "__main__":
+    main()
