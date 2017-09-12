@@ -24,8 +24,11 @@ def _def(env: Env, scope, args):
 @PyFunc
 def _fn(env: Env, scope, args):
     # (fn (<var list>) <expr>)
-    typeCheck(args[1].expr, [list])
-    var_list = [i.expr for i in args[1].expr]
+    typeCheck(args[1].expr, [list, Symbol])
+    if issymbol(args[1].expr):
+        var_list = [args[1].expr]
+    else:
+        var_list = [i.expr for i in args[1].expr]
     all(typeCheck(i, [Symbol]) for i in var_list)
     typeCheck(args[2], [Expr])
     return Func(var_list, args[2])

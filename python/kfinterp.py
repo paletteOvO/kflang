@@ -129,7 +129,7 @@ class Execute():
 
 
 def main():
-    string = "(call/cc (lambda (cc) (begin (define x 1) (cc x) (define x 5))))"
+    string = "(call/cc (.cc (begin (define x 1) (cc x))))"
     expr = Parser().parse(string)
     # print(expr)
     e = Execute(expr)

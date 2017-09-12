@@ -71,6 +71,7 @@ class Reader():
             self.i = 0
 
 prefix = {"'": "quote", ",": "unquote"}
+suffix = {".": "lambda"}
 def preProcess(expr):
     res = []
     FLAG = 0
@@ -109,6 +110,11 @@ def preProcess(expr):
             writeBuffer()
             res.append(char)
             BUCKETFLAG.append(BUCKETFLAG_NORMAL)
+            c = R.next()
+            if c in suffix:
+                res.append(parse_value(suffix[c]))
+            else:
+                R.retrieve()
         elif char in ")]}":
             writeBuffer()
             res.append(char)

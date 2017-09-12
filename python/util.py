@@ -20,4 +20,4 @@ def typeCheck(var, t):
     else:
         res = isinstance(var, t)
     if not res:
-        raise TypeError(f"Expected <{'|'.join(t.__qualname__ for t in t)}>, Found {type(var).__qualname__}")
+        raise TypeError(f"{var} :: {type(var).__qualname__} should be <{'|'.join(t.__qualname__ for t in t)}>")
